@@ -8,6 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "cross-env NODE_ENV=development nodemon src/server.ts",
     "build": "rimraf dist && swc ./src -d dist",
+    "migrate": "node src/migrations/migrations.js up",
     "format": "prettier --write '**/*.{js,jsx,json,css,scss,ts,tsx}'",
     "check": "prettier --check '**/*.{js,jsx,json,css,scss,ts,tsx}'"
   },
@@ -22,6 +23,7 @@
     "express-rate-limit": "^6.3.0",
     "helmet": "^5.0.2",
     "http-status": "^1.5.1",
+    "joi": "^17.13.3",
     "jsdom": "^24.1.0",
     "morgan": "^1.10.0",
     "node-fetch": "^3.3.2",

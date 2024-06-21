@@ -1,7 +1,7 @@
-const httpStatus = require('http-status');
-const config = require('../config/config');
-const logger = require('../config/logger');
-const ApiError = require('../utils/ApiError');
+const httpStatus = require("http-status");
+const config = require("../config/config");
+const logger = require("../config/logger");
+const ApiError = require("../utils/ApiError");
 
 const handleCastErrorDB = (err) => {
   const message = `Invalid ${err.path}: ${err.value}.`;
@@ -17,19 +17,19 @@ const handleDuplicateFieldsDB = (err) => {
 
 const handleValidationErrorDB = (err) => {
   const errors = Object.values(err.errors).map((el) => el.message);
-  const message = `${errors.join('. ')}`;
+  const message = `${errors.join(". ")}`;
   return message;
 };
 
 exports.errorConverter = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
-  if (error.name === 'CastError') error.message = handleCastErrorDB(error);
+  if (error.name === "CastError") error.message = handleCastErrorDB(error);
   if (error.code === 11000) error.message = handleDuplicateFieldsDB(error);
-  if (error.name === 'ValidationError') error.message = handleValidationErrorDB(error);
+  if (error.name === "ValidationError")
+    error.message = handleValidationErrorDB(error);
   if (!(error instanceof ApiError)) {
-    const statusCode =
-      error.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
+    const statusCode = error.statusCode || httpStatus.INTERNAL_SERVER_ERROR;
     // eslint-disable-next-line security/detect-object-injection
     const message = error.message || httpStatus[statusCode];
     error = new ApiError(statusCode, message, false, err.stack);
@@ -39,7 +39,7 @@ exports.errorConverter = (err, req, res, next) => {
 
 exports.errorHandler = (err, req, res, next) => {
   let { statusCode, message } = err;
-  if (config.env === 'production' && !err.isOperational) {
+  if (config.env === "production" && !err.isOperational) {
     statusCode = httpStatus.INTERNAL_SERVER_ERROR;
     message = httpStatus[httpStatus.INTERNAL_SERVER_ERROR];
   }
@@ -50,11 +50,11 @@ exports.errorHandler = (err, req, res, next) => {
     code: statusCode,
     message,
     status: err.status,
-    ...(config.env === 'development' && { error: err }),
-    ...(config.env === 'development' && { stack: err.stack }),
+    ...(config.env === "development" && { error: err }),
+    ...(config.env === "development" && { stack: err.stack }),
   };
 
-  if (config.env === 'development') {
+  if (config.env === "development") {
     logger.error(err);
   }
 

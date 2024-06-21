@@ -1,20 +1,20 @@
-const express = require('express');
-const helmet = require('helmet');
-const xss = require('xss-clean');
-const compression = require('compression');
-const cors = require('cors');
-const httpStatus = require('http-status');
-const config = require('./config/config');
-const morgan = require('./config/morgan');
-const routes = require('./routes');
-const { errorConverter, errorHandler } = require('./middlewares/error');
-const ApiError = require('./utils/ApiError');
-const jobs = require('./jobs');
-const schedule = require('node-schedule');
+const express = require("express");
+const helmet = require("helmet");
+const xss = require("xss-clean");
+const compression = require("compression");
+const cors = require("cors");
+const httpStatus = require("http-status");
+const config = require("./config/config");
+const morgan = require("./config/morgan");
+const routes = require("./routes");
+const { errorConverter, errorHandler } = require("./middlewares/error");
+const ApiError = require("./utils/ApiError");
+const jobs = require("./jobs");
+const schedule = require("node-schedule");
 
 const app = express();
 
-if (config.env !== 'test') {
+if (config.env !== "test") {
   app.use(morgan.successHandler);
   app.use(morgan.errorHandler);
 }
@@ -23,10 +23,10 @@ if (config.env !== 'test') {
 app.use(helmet());
 
 // parse json request body
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: "10kb" }));
 
 // parse urlencoded request body
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 // sanitize request data
 app.use(xss());
@@ -36,23 +36,20 @@ app.use(compression());
 
 // enable cors
 app.use(cors());
-app.options('*', cors());
-
+app.options("*", cors());
 
 // v1 api routes
-app.use('/', routes);
+app.use("/", routes);
 
 // show server status on / route
 
-app.get('/', (req, res) => {
-  res.send('Server is running');
-}
-);
-
+app.get("/", (req, res) => {
+  res.send("Server is running");
+});
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
-  next(new ApiError(httpStatus.NOT_FOUND, 'Not found'));
+  next(new ApiError(httpStatus.NOT_FOUND, "Not found"));
 });
 
 // convert error to ApiError, if needed
