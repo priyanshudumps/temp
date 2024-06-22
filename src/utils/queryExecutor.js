@@ -13,7 +13,6 @@ const executeQuery = async (query, values = [], isTransaction = false) => {
     if (isTransaction) await client.query("ROLLBACK");
     console.log(query);
     console.log(error.message);
-    await client.release();
     throw new Error(`Error executing query: ${query} - ${error.message}`);
   } finally {
     await client.release();
@@ -36,7 +35,6 @@ const executeMultipleQueries = async (queries) => {
     await client.query("ROLLBACK");
     console.log(queries);
     console.log(error.message);
-    await client.release();
     throw new Error(`Error executing multiple queries: ${error.message}`);
   } finally {
     await client.release();
