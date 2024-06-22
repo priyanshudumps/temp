@@ -1,5 +1,33 @@
 const { executeQuery } = require("../utils/queryExecutor");
 
+
+
+/*
+
+CREATE TABLE IF NOT EXISTS coin_links (
+        coin_id VARCHAR(255) PRIMARY KEY REFERENCES coins(coin_id),
+        twitter VARCHAR(255) NULL,
+        telegram VARCHAR(255) NULL,
+        discord VARCHAR(255) NULL,
+        github VARCHAR(255) NULL,
+        website VARCHAR(255) NULL,
+        whitepaper VARCHAR(255) NULL,
+        medium VARCHAR(255) NULL,
+        linkedin VARCHAR(255) NULL,
+        youtube VARCHAR(255) NULL,
+        reddit VARCHAR(255) NULL,
+        facebook VARCHAR(255) NULL,
+        instagram VARCHAR(255) NULL,
+        tiktok VARCHAR(255) NULL,
+        forum VARCHAR(255) NULL,
+        other_links VARCHAR(255)[] Null,
+        tags VARCHAR(255)[] NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+)
+
+*/
+
 const addCoinLinksIfNotExists = async (coinLinksData) => {
   const query = `
         INSERT INTO coin_links (coin_id, twitter, telegram, discord, github, website, whitepaper, medium, linkedin, youtube, reddit, facebook, instagram, tiktok, forum, other_links, tags)
@@ -31,6 +59,72 @@ const addCoinLinksIfNotExists = async (coinLinksData) => {
     ],
     true
   );
+};
+
+const addMultipleCoinLinksOrUpdate = async (coinLinksData) => {
+  const query = `
+        INSERT INTO coin_links (coin_id, twitter, telegram, discord, github, website, whitepaper, medium, linkedin, youtube, reddit, facebook, instagram, tiktok, forum, other_links, tags)
+        VALUES ${coinLinksData
+          .map(
+            (_, index) =>
+              `($${index * 17 + 1}, $${index * 17 + 2}, $${index * 17 + 3}, $${
+                index * 17 + 4
+              }, $${index * 17 + 5}, $${index * 17 + 6}, $${index * 17 + 7}, $${
+                index * 17 + 8
+              }, $${index * 17 + 9}, $${index * 17 + 10}, $${
+                index * 17 + 11
+              }, $${index * 17 + 12}, $${index * 17 + 13}, $${
+                index * 17 + 14
+              }, $${index * 17 + 15}, $${index * 17 + 16}, $${index * 17 + 17})`
+          )
+          .join(", ")}
+        ON CONFLICT (coin_id)
+        DO UPDATE
+        SET twitter = EXCLUDED.twitter,
+            telegram = EXCLUDED.telegram,
+            discord = EXCLUDED.discord,
+            github = EXCLUDED.github,
+            website = EXCLUDED.website,
+            whitepaper = EXCLUDED.whitepaper,
+            medium = EXCLUDED.medium,
+            linkedin = EXCLUDED.linkedin,
+            youtube = EXCLUDED.youtube,
+            reddit = EXCLUDED.reddit,
+            facebook = EXCLUDED.facebook,
+            instagram = EXCLUDED.instagram,
+            tiktok = EXCLUDED.tiktok,
+            forum = EXCLUDED.forum,
+            other_links = EXCLUDED.other_links,
+            tags = EXCLUDED.tags,
+            updated_at = NOW()  
+        RETURNING *;
+    `;
+
+    // console.log(`{${coinLinks.tags.join(',')}}`);
+  const values = coinLinksData.reduce((acc, coinLinks) => {
+    let tags = coinLinks.tags? coinLinks.tags : [];
+    acc.push(coinLinks.coin_id);
+    acc.push(coinLinks.twitter);
+    acc.push(coinLinks.telegram);
+    acc.push(coinLinks.discord);
+    acc.push(coinLinks.github);
+    acc.push(coinLinks.website);
+    acc.push(coinLinks.whitepaper);
+    acc.push(coinLinks.medium);
+    acc.push(coinLinks.linkedin);
+    acc.push(coinLinks.youtube);
+    acc.push(coinLinks.reddit);
+    acc.push(coinLinks.facebook);
+    acc.push(coinLinks.instagram);
+    acc.push(coinLinks.tiktok);
+    acc.push(coinLinks.forum);
+    acc.push(coinLinks.other_links);
+    acc.push(`{${tags.join(',')}}`);
+    return acc;
+  }, []);
+  // console.log(values);
+
+  return executeQuery(query, values);
 };
 
 const updateCoinLinks = async (coinId, coinLinksData) => {
@@ -87,7 +181,7 @@ const getCoinLinksByCoinId = async (coinId) => {
   return executeQuery(query, [coinId]);
 };
 
-const getCoinLinks = async () => {
+const getAllCoinLinks = async () => {
   const query = `
         SELECT * FROM coin_links;
     `;
@@ -98,5 +192,6 @@ module.exports = {
   addCoinLinksIfNotExists,
   updateCoinLinks,
   getCoinLinksByCoinId,
-  getCoinLinks,
+  getAllCoinLinks,
+  addMultipleCoinLinksOrUpdate,
 };
