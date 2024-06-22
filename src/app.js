@@ -29,10 +29,8 @@ jobs.cacheData().then(() => {
   // schedule for every 5 minutes
   schedule.scheduleJob("*/5 * * * *", () => {
     services.dexDataService();
-  
   });
 });
-
 
 // set security HTTP headers
 app.use(helmet());

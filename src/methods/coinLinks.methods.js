@@ -1,7 +1,5 @@
 const { executeQuery } = require("../utils/queryExecutor");
 
-
-
 /*
 
 CREATE TABLE IF NOT EXISTS coin_links (
@@ -100,9 +98,9 @@ const addMultipleCoinLinksOrUpdate = async (coinLinksData) => {
         RETURNING *;
     `;
 
-    // console.log(`{${coinLinks.tags.join(',')}}`);
+  // console.log(`{${coinLinks.tags.join(',')}}`);
   const values = coinLinksData.reduce((acc, coinLinks) => {
-    let tags = coinLinks.tags? coinLinks.tags : [];
+    let tags = coinLinks.tags ? coinLinks.tags : [];
     acc.push(coinLinks.coin_id);
     acc.push(coinLinks.twitter);
     acc.push(coinLinks.telegram);
@@ -119,7 +117,7 @@ const addMultipleCoinLinksOrUpdate = async (coinLinksData) => {
     acc.push(coinLinks.tiktok);
     acc.push(coinLinks.forum);
     acc.push(coinLinks.other_links);
-    acc.push(`{${tags.join(',')}}`);
+    acc.push(`{${tags.join(",")}}`);
     return acc;
   }, []);
   // console.log(values);

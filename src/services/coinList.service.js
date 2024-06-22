@@ -25,17 +25,18 @@ const InsertOrUpdateDataFromCoinLists = async () => {
         coin_id: coinData.coin_id,
         is_permissioned_hippo: coin.permissioned_listing,
       };
-    } else{
-      constants.cache.COIN_SCORE[coinData.coin_id].is_permissioned_hippo = coin.permissioned_listing;
+    } else {
+      constants.cache.COIN_SCORE[coinData.coin_id].is_permissioned_hippo =
+        coin.permissioned_listing;
     }
 
     if (!constants.cache.COIN_LINKS[coinData.coin_id]) {
       constants.cache.COIN_LINKS[coinData.coin_id] = {
         coin_id: coinData.coin_id,
         website: coin.project_url,
-        // tags: [...coin.extensions.data, coin.source], // TODO: work on tags 
+        // tags: [...coin.extensions.data, coin.source], // TODO: work on tags
       };
-    } else{
+    } else {
       constants.cache.COIN_LINKS[coinData.coin_id].website = coin.project_url;
       // constants.cache.COIN_LINKS[coinData.coin_id].tags = [...coin.extensions.data];
     }
@@ -46,14 +47,18 @@ const InsertOrUpdateDataFromCoinLists = async () => {
   for (const coin of panoraCoinList) {
     const coin_type_legacy = coin.tokenAddress.includes("::")
       ? coin.tokenAddress
-      : constants.cache.COINS[coin.tokenAddress] ? constants.cache.COINS[coin.tokenAddress].coin_type_legacy
+      : constants.cache.COINS[coin.tokenAddress]
       ? constants.cache.COINS[coin.tokenAddress].coin_type_legacy
-      : null: null;
+        ? constants.cache.COINS[coin.tokenAddress].coin_type_legacy
+        : null
+      : null;
     const coin_address_fungible = coin.tokenAddress.includes("::")
       ? null
-      : constants.cache.COINS[coin.tokenAddress]? constants.cache.COINS[coin.tokenAddress].coin_address_fungible
+      : constants.cache.COINS[coin.tokenAddress]
       ? constants.cache.COINS[coin.tokenAddress].coin_address_fungible
-      : null: null;
+        ? constants.cache.COINS[coin.tokenAddress].coin_address_fungible
+        : null
+      : null;
 
     const coinData = {
       coin_id: coin.tokenAddress,
@@ -73,8 +78,9 @@ const InsertOrUpdateDataFromCoinLists = async () => {
         coin_id: coinData.coin_id,
         is_banned_panora: coin.isBanned,
       };
-    } else{
-      constants.cache.COIN_SCORE[coinData.coin_id].is_banned_panora = coin.isBanned;
+    } else {
+      constants.cache.COIN_SCORE[coinData.coin_id].is_banned_panora =
+        coin.isBanned;
     }
 
     if (!constants.cache.COIN_LINKS[coinData.coin_id]) {
@@ -83,7 +89,7 @@ const InsertOrUpdateDataFromCoinLists = async () => {
         website: coin.websiteUrl,
         // tags: [coin.bridge, coin.category],
       };
-    } else{
+    } else {
       constants.cache.COIN_LINKS[coinData.coin_id].website = coin.websiteUrl;
       // constants.cache.COIN_LINKS[coinData.coin_id].tags = [
       //   ...constants.cache.COIN_LINKS[coinData.coin_id].tags,
@@ -91,7 +97,7 @@ const InsertOrUpdateDataFromCoinLists = async () => {
       //   coin.category,
       // ];
     }
-    
+
     constants.cache.COINS[coinData.coin_id] = coinData;
   }
 
@@ -106,7 +112,6 @@ const InsertOrUpdateDataFromCoinLists = async () => {
   ]);
   logger.info("Updated coin data from hippo and panora.");
 };
-
 
 module.exports = {
   InsertOrUpdateDataFromCoinLists,

@@ -1,1 +1,1 @@
-exports.cacheData = require('./dataCaching.job')
+exports.cacheData = require("./dataCaching.job");

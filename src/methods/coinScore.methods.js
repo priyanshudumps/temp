@@ -3,7 +3,6 @@ const {
   executeQuery,
 } = require("../utils/queryExecutor");
 
-
 /*
 CREATE TABLE IF NOT EXISTS coin_score (
         coin_id VARCHAR(255) PRIMARY KEY REFERENCES coins(coin_id)
@@ -116,12 +115,10 @@ const getAllCoinScores = async (coinIds) => {
   return executeQuery(query, [coinIds]);
 };
 
-
 module.exports = {
   addCoinScoreIfNotExists,
   addMultipleCoinScores,
   addMultipleCoinScoresOrUpdate,
   getCoinScore,
-  getAllCoinScores
+  getAllCoinScores,
 };
-

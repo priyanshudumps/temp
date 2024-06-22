@@ -6,7 +6,7 @@ const fetchCoinDetailsFromAddress = async (address) => {
   const url = `${BASE_URL}/${endpoint},`;
   try {
     const response = await fetch(url);
-    const res  = await response.json();
+    const res = await response.json();
     if (Array.isArray(res.pairs)) {
       return res;
     } else {
