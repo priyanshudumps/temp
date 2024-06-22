@@ -5,11 +5,7 @@ CREATE TABLE IF NOT EXISTS coin_dex_metrics (
         dex VARCHAR(255),
         base_token VARCHAR(255),
         quote_token VARCHAR(255),
-        liquidity NUMERIC NULL,
-        fdv NUMERIC NULL,
-        pair_created_at TIMESTAMPTZ,
-
-        transactions NUMERIC NULL,
+        pair_created_at TIMESTAMPTZ NUll,
 
         transactions_m5_buys NUMERIC NULL,
         transactions_m5_sells NUMERIC NULL,
