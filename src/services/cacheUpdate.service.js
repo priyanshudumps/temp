@@ -35,9 +35,17 @@ const updateCachedCoinDexData = async () => {
   }
 };
 
+const updateCachedCoinMetricsData = async () => {
+  const allCoinMetrics = await methods.coinMetrics.getAllCoinMetricsData();
+  for (const coinMetrics of allCoinMetrics) {
+    constants.cache.COIN_METRICS[coinMetrics.coin_id] = coinMetrics;
+  }
+};
+
 module.exports = {
   updateCachedCoinData,
   updateCachedCoinLinksData,
   updateCachedCoinScoreData,
   updateCachedCoinDexData,
+  updateCachedCoinMetricsData,
 };
