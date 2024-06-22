@@ -11,6 +11,7 @@ const { errorConverter, errorHandler } = require("./middlewares/error");
 const ApiError = require("./utils/ApiError");
 const jobs = require("./jobs");
 const schedule = require("node-schedule");
+const services = require("./services");
 
 const app = express();
 
@@ -18,6 +19,20 @@ if (config.env !== "test") {
   app.use(morgan.successHandler);
   app.use(morgan.errorHandler);
 }
+
+jobs.cacheData().then(() => {
+  // schedule for every 1 hour
+  schedule.scheduleJob("0 * * * *", () => {
+    services.coinListService.InsertOrUpdateDataFromCoinLists();
+  });
+
+  // schedule for every 5 minutes
+  schedule.scheduleJob("*/5 * * * *", () => {
+    services.dexDataService();
+  
+  });
+});
+
 
 // set security HTTP headers
 app.use(helmet());
