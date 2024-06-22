@@ -1,4 +1,5 @@
 const { coingeckoApiKey } = require("../../config/config");
+const logger = require("../../config/logger");
 
 const BASE_URL = "https://api.coingecko.com/api/v3";
 const HEADERS = {
@@ -7,19 +8,26 @@ const HEADERS = {
 };
 
 const getPriceByIds = async (ids) => {
-  const params = {
-    ids: ids.join(","),
-    vs_currencies: "usd",
-    include_market_cap: true,
-    include_24hr_vol: true,
-    include_24hr_change: true,
-    include_last_updated_at: true,
-    include_ohlc: true,
-  };
-  const url = `${BASE_URL}/simple/price`;
-  const searchParams = new URLSearchParams(params);
-  const response = await fetch(`${url}?${searchParams}`, { headers: HEADERS });
-  return response.json();
+  try {
+    const params = {
+      ids: ids.join(","),
+      vs_currencies: "usd",
+      include_market_cap: true,
+      include_24hr_vol: true,
+      include_24hr_change: true,
+      include_last_updated_at: true,
+      include_ohlc: true,
+    };
+    const url = `${BASE_URL}/simple/price`;
+    const searchParams = new URLSearchParams(params);
+    const response = await fetch(`${url}?${searchParams}`, {
+      headers: HEADERS,
+    });
+    return response.json();
+  } catch (e) {
+    logger.error(`Error fetching coin price data from coingecko: ${e}`);
+    return {};
+  }
 };
 
 const getCoinDataById = async (id) => {
