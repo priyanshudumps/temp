@@ -16,7 +16,7 @@ const executeQuery = async (query, values = [], isTransaction = false) => {
     await client.release();
     throw new Error(`Error executing query: ${query} - ${error.message}`);
   } finally {
-    // await client.release();
+    await client.release();
   }
 };
 
