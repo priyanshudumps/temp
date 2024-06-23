@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS coins (
         coin_decimals INTEGER NOT NULL,
         coin_description TEXT NULL,
         coin_logo_url VARCHAR(255) NULL,
-        price_usd NUMERIC NULL,
  
         coingecko_id VARCHAR(255) NULL,
         coinmarketcap_id VARCHAR(255) NULL,

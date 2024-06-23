@@ -11,7 +11,6 @@ CREATE TABLE coins(
     coin_decimals integer NOT NULL,
     coin_description text,
     coin_logo_url varchar(255),
-    price_usd numeric,
     coingecko_id varchar(255),
     coinmarketcap_id varchar(255),
     created_at timestamp with time zone DEFAULT now(),
@@ -22,8 +21,8 @@ CREATE TABLE coins(
 
 const addCoinIfNotExists = async (coinData) => {
   const query = `
-    INSERT INTO coins (coin_id, coin_type_legacy, coin_address_fungible, coin_name, coin_symbol, coin_defyapp_symbol, coin_decimals, coin_description, coin_logo_url, price_usd, coingecko_id, coinmarketcap_id)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    INSERT INTO coins (coin_id, coin_type_legacy, coin_address_fungible, coin_name, coin_symbol, coin_defyapp_symbol, coin_decimals, coin_description, coin_logo_url, coingecko_id, coinmarketcap_id)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
     ON CONFLICT (coin_id)
     DO NOTHING
     RETURNING *;
@@ -40,7 +39,6 @@ const addCoinIfNotExists = async (coinData) => {
       coinData.coin_decimals,
       coinData.coin_description,
       coinData.coin_logo_url,
-      coinData.price_usd,
       coinData.coingecko_id,
       coinData.coinmarketcap_id,
     ],
@@ -50,17 +48,15 @@ const addCoinIfNotExists = async (coinData) => {
 
 const addMultipleCoins = async (coinsData) => {
   const query = `
-    INSERT INTO coins (coin_id, coin_type_legacy, coin_address_fungible, coin_name, coin_symbol, coin_defyapp_symbol, coin_decimals, coin_description, coin_logo_url, price_usd, coingecko_id, coinmarketcap_id)
+    INSERT INTO coins (coin_id, coin_type_legacy, coin_address_fungible, coin_name, coin_symbol, coin_defyapp_symbol, coin_decimals, coin_description, coin_logo_url, coingecko_id, coinmarketcap_id)
     VALUES ${coinsData
       .map(
         (_, index) =>
-          `($${index * 12 + 1}, $${index * 12 + 2}, $${index * 12 + 3}, $${
-            index * 12 + 4
-          }, $${index * 12 + 5}, $${index * 12 + 6}, $${index * 12 + 7}, $${
-            index * 12 + 8
-          }, $${index * 12 + 9}, $${index * 12 + 10}, $${index * 12 + 11}, $${
-            index * 12 + 12
-          })`
+          `($${index * 11 + 1}, $${index * 11 + 2}, $${index * 11 + 3}, $${
+            index * 11 + 4
+          }, $${index * 11 + 5}, $${index * 11 + 6}, $${index * 11 + 7}, $${
+            index * 11 + 8
+          }, $${index * 11 + 9}, $${index * 11 + 10}, $${index * 11 + 11})`
       )
       .join(", ")}
     ON CONFLICT (coin_id)
@@ -77,7 +73,6 @@ const addMultipleCoins = async (coinsData) => {
     acc.push(coin.coin_decimals);
     acc.push(coin.coin_description);
     acc.push(coin.coin_logo_url);
-    acc.push(coin.price_usd);
     acc.push(coin.coingecko_id);
     acc.push(coin.coinmarketcap_id);
     return acc;
@@ -88,17 +83,15 @@ const addMultipleCoins = async (coinsData) => {
 // addmultiple coins and update on conflict
 const addMultipleCoinsOrUpdate = async (coinsData) => {
   const query = `
-    INSERT INTO coins (coin_id, coin_type_legacy, coin_address_fungible, coin_name, coin_symbol, coin_defyapp_symbol, coin_decimals, coin_description, coin_logo_url, price_usd, coingecko_id, coinmarketcap_id)
+    INSERT INTO coins (coin_id, coin_type_legacy, coin_address_fungible, coin_name, coin_symbol, coin_defyapp_symbol, coin_decimals, coin_description, coin_logo_url, coingecko_id, coinmarketcap_id)
     VALUES ${coinsData
       .map(
         (_, index) =>
-          `($${index * 12 + 1}, $${index * 12 + 2}, $${index * 12 + 3}, $${
-            index * 12 + 4
-          }, $${index * 12 + 5}, $${index * 12 + 6}, $${index * 12 + 7}, $${
-            index * 12 + 8
-          }, $${index * 12 + 9}, $${index * 12 + 10}, $${index * 12 + 11}, $${
-            index * 12 + 12
-          })`
+          `($${index * 11 + 1}, $${index * 11 + 2}, $${index * 11 + 3}, $${
+            index * 11 + 4
+          }, $${index * 11 + 5}, $${index * 11 + 6}, $${index * 11 + 7}, $${
+            index * 11 + 8
+          }, $${index * 11 + 9}, $${index * 11 + 10}, $${index * 11 + 11})`
       )
       .join(", ")}
     ON CONFLICT (coin_id)
@@ -111,7 +104,6 @@ const addMultipleCoinsOrUpdate = async (coinsData) => {
       coin_decimals = excluded.coin_decimals,
       coin_description = excluded.coin_description,
       coin_logo_url = excluded.coin_logo_url,
-      price_usd = excluded.price_usd,
       coingecko_id = excluded.coingecko_id,
       coinmarketcap_id = excluded.coinmarketcap_id,
       updated_at = NOW()
@@ -127,7 +119,6 @@ const addMultipleCoinsOrUpdate = async (coinsData) => {
     acc.push(coin.coin_decimals);
     acc.push(coin.coin_description);
     acc.push(coin.coin_logo_url);
-    acc.push(coin.price_usd);
     acc.push(coin.coingecko_id);
     acc.push(coin.coinmarketcap_id);
     return acc;
@@ -146,11 +137,10 @@ const updateCoin = async (coinId, coinData) => {
         coin_decimals = $6,
         coin_description = $7,
         coin_logo_url = $8,
-        price_usd = $9,
-        coingecko_id = $10,
-        coinmarketcap_id = $11,
+        coingecko_id = $9,
+        coinmarketcap_id = $10,
         updated_at = NOW()
-    WHERE coin_id = $12
+    WHERE coin_id = $11
     RETURNING *;
   `;
   return executeQuery(
@@ -164,7 +154,6 @@ const updateCoin = async (coinId, coinData) => {
       coinData.coin_decimals,
       coinData.coin_description,
       coinData.coin_logo_url,
-      coinData.price_usd,
       coinData.coingecko_id,
       coinData.coinmarketcap_id,
       coinId,
