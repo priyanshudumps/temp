@@ -5,6 +5,7 @@ const cacheData = require("./dataCaching.job");
 
 const startJobs = async () => {
   await cacheData();
+  await services.coinListService.InsertOrUpdateDataFromCoinLists();
   // schedule for every 1 hour
   schedule.scheduleJob("0 * * * *", () => {
     services.coinListService.InsertOrUpdateDataFromCoinLists();
