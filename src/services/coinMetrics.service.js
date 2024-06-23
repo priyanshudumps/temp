@@ -4,7 +4,9 @@ const constants = require("../constants");
 const logger = require("../config/logger");
 
 const InsertOrUpdateCoinMetricsData = async (coinMetricsData) => {
-  logger.info("Starting to insert or update coin metrics data.");
+  logger.info(
+    "Starting to insert or update coin metrics data from Coinmarketcap and Coingecko."
+  );
 
   const coinmarketcapIdToCoinIds = {};
   const coinIdToCoingeckoId = {};
@@ -118,7 +120,9 @@ const InsertOrUpdateCoinMetricsData = async (coinMetricsData) => {
     Object.values(constants.cache.COIN_METRICS)
   );
 
-  logger.info("Finished inserting or updating coin metrics data.");
+  logger.info(
+    "Finished inserting or updating coin metrics data from Coinmarketcap and Coingecko."
+  );
 };
 
 module.exports = {
