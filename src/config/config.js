@@ -26,6 +26,7 @@ const envVarsSchema = Joi.object()
     COIN_MARKET_CAP_API_KEY: Joi.string()
       .required()
       .description("Coin Market Cap API Key"),
+    EXCHANGE_RATE_API_KEY: Joi.string(),
   })
   .unknown();
 
@@ -56,4 +57,5 @@ module.exports = {
   },
   coingeckoApiKey: envVars.COINGECKO_KEY,
   coinMarketCapApiKey: envVars.COIN_MARKET_CAP_API_KEY,
+  exchangeRateApiKey: envVars.EXCHANGE_RATE_API_KEY,
 };
