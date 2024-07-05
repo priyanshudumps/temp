@@ -20,6 +20,11 @@ const startJobs = async () => {
   schedule.scheduleJob("*/10 * * * *", () => {
     services.coinMetricsService.InsertOrUpdateCoinMetricsData();
   });
+
+  // schedule for every 12 hours
+  schedule.scheduleJob("0 */12 * * *", () => {
+    services.currencyExchangeRatesService.InsertOrUpdateCurrencyPricesData();
+  });
 };
 
 module.exports = { startJobs };

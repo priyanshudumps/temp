@@ -3,3 +3,4 @@ exports.coinLinks = require("./coinLinks.methods");
 exports.coinScores = require("./coinScore.methods");
 exports.coinDexMetrics = require("./coinDexMetrics.methods");
 exports.coinMetrics = require("./coinMetrics.methods");
+exports.currencyPrices = require("./currencyPrices.methods");
