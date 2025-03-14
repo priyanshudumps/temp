@@ -13,3 +13,7 @@ const fetchCoinDetailsByAddresses = async (addresses) => {
   const response = await fetch(`${url}?${searchParams}`, { headers: HEADERS });
   return response.json();
 };
+
+module.exports = {
+  fetchCoinDetailsByAddresses,
+};

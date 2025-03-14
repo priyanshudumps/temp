@@ -6,18 +6,27 @@ const logger = require("../config/logger");
 const InsertOrUpdateDataFromDexes = async () => {
   logger.info("Starting to insert or update dex data from dexscreener.");
   const addresses = Object.keys(constants.cache.COINS);
+  
   for (const address of addresses) {
-    const dexscreenerData =
-      await CoinClients.dexscreenerData.fetchCoinDetailsFromAddress(address);
+    const dexscreenerData = await CoinClients.dexscreenerData.fetchCoinDetailsFromAddress(address);
+    
     if (dexscreenerData.pairs.length > 0) {
       constants.cache.COIN_DEX_METRICS[address] = [];
 
+      // Get the coin_id from the cache (which should match what's in the database) (faAddress)
+      
+      const coin_id = constants.cache.COINS[address].coin_id;
+      
+      // Make sure we have a valid coin_id
+      if (!coin_id) {
+        logger.warn(`No valid coin_id found for address: ${address}, skipping DEX metrics update`);
+        continue;
+      }
+
       for (const pair of dexscreenerData.pairs) {
-        const pair_created_at = pair.pairCreatedAt
-          ? new Date(pair.pairCreatedAt)
-          : null;
+        const pair_created_at = pair.pairCreatedAt ? new Date(pair.pairCreatedAt) : null;
         constants.cache.COIN_DEX_METRICS[address].push({
-          coin_id: address,
+          coin_id: coin_id, // updated coin_id
           pair_id: pair.pairAddress,
           dex: pair.dexId,
           base_token: pair.baseToken?.address,
@@ -50,10 +59,15 @@ const InsertOrUpdateDataFromDexes = async () => {
           fdv_usd: pair.fdv,
         });
       }
+      
       if (constants.cache.COIN_DEX_METRICS[address].length > 0) {
-        methods.coinDexMetrics.addCoinMultipleDexMetricsOrUpdate(
-          constants.cache.COIN_DEX_METRICS[address]
-        );
+        try {
+          await methods.coinDexMetrics.addCoinMultipleDexMetricsOrUpdate(
+            constants.cache.COIN_DEX_METRICS[address]
+          );
+        } catch (error) {
+          logger.error(`Error updating DEX metrics for address ${address}: ${error.message}`);
+        }
       }
     }
   }

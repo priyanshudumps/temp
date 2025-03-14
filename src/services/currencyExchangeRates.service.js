@@ -4,6 +4,9 @@ const logger = require("../config/logger");
 
 const InsertOrUpdateCurrencyPricesData = async () => {
   try {
+    logger.info(
+      "Starting to insert or update currency prices data from exchange rate client."
+    );
     const allCurrencyPrices = [];
     const allSupportesCurrencies =
       await Clients.exchangeRateClient.getAllSupportedCodes();
