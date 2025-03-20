@@ -4,13 +4,13 @@
   "description": "aptos-coin-data-aggregator",
   "main": "src/server.js",
   "scripts": {
-    "start": "cross-env NODE_ENV=production node src/server.js",
+    "start": "cross-env NODE_ENV=production node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "cross-env NODE_ENV=development nodemon src/server.js",
-    "build": "rimraf dist && swc ./src -d dist",
-    "migrate": "node src/migrations/migrations.js up",
-    "format": "prettier --write '**/*.{js,jsx,json,css,scss,ts,tsx}'",
-    "check": "prettier --check '**/*.{js,jsx,json,css,scss,ts,tsx}'"
+    "dev": "cross-env NODE_ENV=development nodemon --exec ts-node src/server.ts",
+    "build": "rimraf dist && tsc",
+    "migrate": "ts-node src/migrations/migrations.ts up",
+    "format": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss}'",
+    "check": "prettier --check '**/*.{js,jsx,ts,tsx,json,css,scss}'"
   },
   "author": "adityaaggarwal12339@gmail.com",
   "dependencies": {
@@ -25,6 +25,7 @@
     "http-status": "^1.5.1",
     "joi": "^17.13.3",
     "jsdom": "^24.1.0",
+    "mongoose": "^8.12.1",
     "morgan": "^1.10.0",
     "node-fetch": "^3.3.2",
     "node-schedule": "^2.1.1",
@@ -37,6 +38,15 @@
     "xss-clean": "^0.1.1"
   },
   "devDependencies": {
+    "@types/compression": "^1.7.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/helmet": "^0.0.48",
+    "@types/joi": "^17.2.2",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^22.13.10",
+    "@types/passport": "^1.0.17",
+    "@types/pg": "^8.11.11",
     "eslint": "^8.15.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^8.5.0",
@@ -46,7 +56,9 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.29.4",
     "eslint-plugin-security": "^1.5.0",
-    "nodemon": "^3.1.3",
-    "prettier": "^2.6.2"
+    "nodemon": "^3.1.9",
+    "prettier": "^2.6.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
   }
 }
