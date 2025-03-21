@@ -5,8 +5,12 @@ import * as coinMarketcapClient from './coinmarketcap.client';
 import * as coinGeckoClient from './coingecko.client';
 import * as exchangeRateClient from './exchangeRateApi.client';
 import * as geckoterminalClient from './geckoterminal.client';
-
-
+// uptosPump
+import uptosPumpClient from './uptosPumpCoinList.client';
+import * as uptosPumpChatsClient from './uptosPumpChats.client';
+import * as uptosPumpLegendClient from './uptosPumpLegend.client';
+import * as uptosPumpHoldersClient from './uptosPumpHolders.client';
+import * as uptosPumpChartsClient from './uptosPump.charts.client';
 
 export default {
   hippoCoinClient,
@@ -15,5 +19,10 @@ export default {
   coinMarketcapClient,
   coinGeckoClient,
   exchangeRateClient,
-  geckoterminalClient
+  geckoterminalClient,
+  uptosPumpClient,
+  uptosPumpChatsClient,
+  uptosPumpLegendClient,
+  uptosPumpHoldersClient,
+  uptosPumpChartsClient
 };

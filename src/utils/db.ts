@@ -14,9 +14,9 @@ const initializePool = async (): Promise<Pool> => {
     max: 25,
     min: 1,
     idleTimeoutMillis: 30000,
-    ssl: {
-      rejectUnauthorized: false,
-    },
+    // ssl: {
+    //   rejectUnauthorized: false,
+    // },
   };
 
   const newPool = new Pool(poolConfig);

@@ -9,6 +9,7 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
   
   try {
     const panoraCoinList = await CoinClients.panoraCoinClient();
+    console.log(panoraCoinList[0]);
 
     for (const coin of panoraCoinList) {
       // since tokenaddress can be null using faAddress as the key
@@ -79,6 +80,14 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
     ]);
     
     logger.info("Finished inserting or updating coin data from hippo and panora.");
+  } catch (error) {
+    logger.error(`Error updating coin list data: ${(error as Error).message}`);
+  }
+  logger.info("Starting to gather API data for all tokens in Uptos Pump coin list");
+
+  try {
+    const uptosPumpCoinList = await CoinClients.uptosPumpClient();
+    console.log(uptosPumpCoinList[0]); 
   } catch (error) {
     logger.error(`Error updating coin list data: ${(error as Error).message}`);
   }
