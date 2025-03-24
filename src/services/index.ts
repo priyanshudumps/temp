@@ -3,11 +3,17 @@ import coinListService from "./coinList.service";
 import dexDataService from "./dexData.service";
 import coinMetricsService from "./coinMetrics.service";
 import currencyExchangeRatesService from "./currencyExchangeRates.service";
+import coinChatsService from "./coinChats.service"; // Add this line
+import uptosPumpLegendService from "./uptosPumpLegend.service";
+
+
 
 export {
     cachingFunctions,
     coinListService,
     dexDataService,
     coinMetricsService,
-    currencyExchangeRatesService
+    currencyExchangeRatesService,
+    coinChatsService,
+    uptosPumpLegendService
 };

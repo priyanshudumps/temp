@@ -1,5 +1,4 @@
-import config from "../../config/config";
-import logger from "../../config/logger";
+import logger from '../../config/logger';
 
 const BASE_URL = "https://pump.uptos.xyz";
 
@@ -12,25 +11,76 @@ interface TokenHolder {
 }
 
 /**
- * Fetches token holder data for a specific token address
- * @param tokenAddr The token address to get holders for
- * @returns Array of TokenHolder objects with holder information
+ * Sleep function to pause execution
+ * @param ms Milliseconds to sleep
  */
-const getTokenHolders = async (tokenAddr: string): Promise<TokenHolder[]> => {
-  try {
-    const url = `${BASE_URL}/token/${tokenAddr}/api/holders`;
-    
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`API responded with status: ${response.status}`);
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Fetches token holder data with retry logic and error handling
+ * @param tokenAddr The token address to get holders for
+ * @param maxRetries Number of retry attempts
+ * @param delayMs Delay between retries in milliseconds
+ * @returns Array of TokenHolder objects or empty array if failed
+ */
+const getTokenHolders = async (
+  tokenAddr: string,
+  maxRetries = 3,
+  delayMs = 1000
+): Promise<TokenHolder[]> => {
+  let attempts = 0;
+  
+  while (attempts < maxRetries) {
+    try {
+      const url = `${BASE_URL}/token/${tokenAddr}/api/holders`;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`API responded with status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Invalid content type: ${contentType}. Expected JSON.`);
+      }
+      
+      const text = await response.text();
+      try {
+        const data = JSON.parse(text);
+        if (Array.isArray(data)) {
+          return data;
+        } else {
+          throw new Error('Response is not an array');
+        }
+      } catch (parseError) {
+        throw new Error(`JSON Parse error: ${parseError.message}. Response: ${text.substring(0, 100)}...`);
+      }
+    } catch (error) {
+      attempts++;
+      logger.warn(`Attempt ${attempts}/${maxRetries} failed for token holders ${tokenAddr}: ${error.message}`);
+      
+      if (attempts >= maxRetries) {
+        logger.error(`All ${maxRetries} attempts failed for token holders ${tokenAddr}`);
+        return [];
+      }
+      
+      await sleep(delayMs);
+      delayMs *= 1.5;
     }
-    
-    return await response.json();
-  } catch (error) {
-    logger.error(`Error fetching token holders data: ${error}`);
-    return [];
   }
+  
+  return [];
 };
 
 /**

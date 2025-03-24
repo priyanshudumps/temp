@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS coin_metrics (
         fully_diluted_market_cap NUMERIC NULL,
         merket_cap_by_total_supply NUMERIC NULL,
         tvl NUMERIC NULL,
+        raw_charts JSONB NULL,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
 )

@@ -2,6 +2,8 @@
 import * as schedule from "node-schedule";
 import * as services from "../services";
 import cacheData from "./dataCaching.job";
+import uptosPumpLegendJob from "./uptosPumpLegend.job";
+
 
 const startJobs = async () => {
   await cacheData();
@@ -21,10 +23,19 @@ const startJobs = async () => {
     services.coinMetricsService.InsertOrUpdateCoinMetricsData();
   });
 
-  // schedule for every 12 hours
+  // schedule for every 12 hours curr
   schedule.scheduleJob("0 */12 * * *", () => {
     services.currencyExchangeRatesService.InsertOrUpdateCurrencyPricesData();
   });
+
+  schedule.scheduleJob("0 */12 * * *", () => {
+    services.coinChatsService.InsertOrUpdateCoinChatsData();
+  });
+    
+  schedule.scheduleJob("0 */12 * * *", () => {
+    uptosPumpLegendJob();
+  });
+
 };
 
 

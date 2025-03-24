@@ -5,7 +5,6 @@ const fetchUptosPumpCoinList = async () => {
   let allCoins = [];
 
   try {
-    // First request to get total count and first page of data
     const initialUrl = `https://pump.uptos.xyz/token/api?page=${page}&pageSize=${pageSize}&keyword=&orderField=virtual_aptos_reserves&orderBy=desc`;
     const initialResponse = await fetch(initialUrl);
     
@@ -15,12 +14,9 @@ const fetchUptosPumpCoinList = async () => {
     
     const initialData = await initialResponse.json();
     
-    // The second item in the array is the total count of coins
     const totalCoins = initialData[1];
-    // Calculate total pages needed
     totalPages = Math.ceil(totalCoins / pageSize);
     
-    // Add first page of coins to our result
     allCoins = [...initialData[0]];
     
     // Fetch remaining pages
@@ -34,7 +30,6 @@ const fetchUptosPumpCoinList = async () => {
       }
       
       const data = await response.json();
-      // Add this page's coins to our result
       allCoins = [...allCoins, ...data[0]];
     }
     

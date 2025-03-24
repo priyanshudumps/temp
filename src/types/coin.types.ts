@@ -102,7 +102,24 @@ export interface ICoin {
     fully_diluted_market_cap?: number | null;
     merket_cap_by_total_supply?: number | null;
     tvl?: number | null;
+    raw_charts?: any | null; 
     created_at?: Date;
+    updated_at?: Date;
+  }
+
+  export interface ICoinChat {
+    id: number;
+    coin_id: string;
+    content: string;
+    image_url?: string | null;
+    created_by: string;
+    reply_to?: number | null;
+    like_count: number;
+    user_name: string;
+    user_image_url?: string | null;
+    is_dev: boolean;
+    is_liked: boolean;
+    created_at: Date;
     updated_at?: Date;
   }
   
@@ -113,6 +130,40 @@ export interface ICoin {
     price: number;
     created_at?: Date;
     updated_at?: Date;
+  }
+
+  export interface IUptosPumpLegend {
+    id?: number;
+    addr: string;
+    nsfw?: boolean;
+    img?: string | null;
+    name?: string | null;
+    ticker?: string | null;
+    description?: string | null;
+    twitter?: string | null;
+    telegram?: string | null;
+    website?: string | null;
+    virtual_aptos_reserves?: string | null;
+    virtual_token_reserves?: string | null;
+    initial_token_reserves?: string | null;
+    rep_count?: number | null;
+    created_by?: string | null;
+    bonding_curve?: string | null;
+    created_at?: Date | null;
+    tx_at?: Date | null;
+    tx_count?: number | null;
+    rep_at?: Date | null;
+    legend_at?: Date | null;
+    legend_tx?: string | null;
+    completed_at?: Date | null;
+    completed_tx?: string | null;
+    lp_addr?: string | null;
+    user_addr?: string | null;
+    user_name?: string | null;
+    user_img?: string | null;
+    market_cap?: number | null;
+    created_db_at?: Date;
+    updated_db_at?: Date;
   }
   
   // Cache related types
@@ -134,6 +185,10 @@ export interface ICoin {
   
   export interface ICoinMetricsCache {
     [key: string]: ICoinMetrics;
+  }
+
+  export interface ICoinChatsCache {
+    [key: string]: ICoinChat[];
   }
   
   // Additional type for transactions

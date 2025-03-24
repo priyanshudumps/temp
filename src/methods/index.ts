@@ -4,6 +4,9 @@ import * as coinScores from './coinScore.methods';
 import * as coinDexMetrics from './coinDexMetrics.methods';
 import * as coinMetrics from './coinMetrics.methods';
 import * as currencyPrices from './currencyPrices.methods';
+import * as coinChats from './coinChats.methods'; 
+import * as uptosPumpLegend from './uptosPumpLegend.methods';
+
 
 export default {
   coins,
@@ -11,5 +14,7 @@ export default {
   coinScores,
   coinDexMetrics,
   coinMetrics,
-  currencyPrices
+  currencyPrices,
+  coinChats,
+  uptosPumpLegend
 };

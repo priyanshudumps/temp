@@ -10,6 +10,7 @@ const job = async () => {
     cachingFunctions.updateCachedCoinScoreData(),
     cachingFunctions.updateCachedCoinDexData(),
     cachingFunctions.updateCachedCoinMetricsData(),
+    cachingFunctions.updateCachedCoinChatsData(), 
   ]);
 };
 

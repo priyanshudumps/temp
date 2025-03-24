@@ -1,6 +1,6 @@
 import methods from '../methods';
 import constants from '../constants';
-import { ICoin, ICoinLinks, ICoinScore, ICoinDexMetrics, ICoinMetrics } from '../types';
+import { ICoin, ICoinLinks, ICoinScore, ICoinDexMetrics, ICoinMetrics, ICoinChat } from '../types';
 
 const updateCachedCoinData = async (): Promise<void> => {
   const allCoins = await methods.coins.getAllCoins();
@@ -36,10 +36,23 @@ const updateCachedCoinDexData = async (): Promise<void> => {
   }
 };
 
-const updateCachedCoinMetricsData = async (): Promise<void> => {
+async function updateCachedCoinMetricsData(): Promise<void> {
   const allCoinMetrics = await methods.coinMetrics.getAllCoinMetricsData();
   for (const coinMetrics of allCoinMetrics) {
     constants.cache.COIN_METRICS[coinMetrics.coin_id] = coinMetrics;
+  }
+}
+
+const updateCachedCoinChatsData = async (): Promise<void> => {
+  // For chats, we need to organize by coin_id
+  const allCoinChats = await methods.coinChats.getAllCoinChats();
+  constants.cache.COIN_CHATS = {};
+  
+  for (const coinChat of allCoinChats) {
+    if (!constants.cache.COIN_CHATS[coinChat.coin_id]) {
+      constants.cache.COIN_CHATS[coinChat.coin_id] = [];
+    }
+    constants.cache.COIN_CHATS[coinChat.coin_id].push(coinChat);
   }
 };
 
@@ -49,4 +62,6 @@ export default {
   updateCachedCoinScoreData,
   updateCachedCoinDexData,
   updateCachedCoinMetricsData,
+  updateCachedCoinChatsData
+
 };

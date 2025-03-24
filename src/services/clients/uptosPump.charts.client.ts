@@ -1,5 +1,4 @@
-import config from "../../config/config";
-import logger from "../../config/logger";
+import logger from '../../config/logger';
 
 const BASE_URL = "https://pump.uptos.xyz";
 
@@ -16,29 +15,78 @@ interface ChartDataPoint {
 type ChartData = ChartDataPoint[];
 
 /**
- * Gets chart data for a specific token
- * @param tokenAddress The full token address
- * @returns Array of chart data points
+ * Sleep function to pause execution
+ * @param ms Milliseconds to sleep
  */
-const getTokenChartData = async (tokenAddress: string): Promise<ChartData> => {
-  try {
-    const url = `${BASE_URL}/token/${tokenAddress}/api/chart`;
-    
-    const response = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch chart data: ${response.status} ${response.statusText}`);
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Gets chart data for a specific token with retry logic and error handling
+ * @param tokenAddress The full token address
+ * @param maxRetries Number of retry attempts
+ * @param delayMs Delay between retries in milliseconds
+ * @returns Array of chart data points or empty array if failed
+ */
+const getTokenChartData = async (
+  tokenAddress: string, 
+  maxRetries = 3, 
+  delayMs = 1000
+): Promise<ChartData> => {
+  let attempts = 0;
+  
+  while (attempts < maxRetries) {
+    try {
+      const url = `${BASE_URL}/token/${tokenAddress}/api/chart`;
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch chart data: ${response.status} ${response.statusText}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Invalid content type: ${contentType}. Expected JSON.`);
+      }
+      
+      const text = await response.text();
+      try {
+        const data = JSON.parse(text);
+        if (Array.isArray(data)) {
+          return data;
+        } else {
+          throw new Error('Response is not an array');
+        }
+      } catch (parseError) {
+        throw new Error(`JSON Parse error: ${parseError.message}. Response: ${text.substring(0, 100)}...`);
+      }
+    } catch (error) {
+      attempts++;
+      logger.warn(`Attempt ${attempts}/${maxRetries} failed for chart data ${tokenAddress}: ${error.message}`);
+      
+      if (attempts >= maxRetries) {
+        logger.error(`All ${maxRetries} attempts failed for chart data ${tokenAddress}`);
+        return [];
+      }
+      
+      // Wait before retrying
+      await sleep(delayMs);
+      // Increase delay for subsequent attempts
+      delayMs *= 1.5;
     }
-    
-    return await response.json();
-  } catch (error) {
-    logger.error(`Error fetching token chart data: ${error}`);
-    return [];
   }
+  
+  return [];
 };
 
 /**
