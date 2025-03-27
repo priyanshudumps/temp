@@ -5,6 +5,8 @@ import coinMetricsService from "./coinMetrics.service";
 import currencyExchangeRatesService from "./currencyExchangeRates.service";
 import coinChatsService from "./coinChats.service"; // Add this line
 import uptosPumpLegendService from "./uptosPumpLegend.service";
+import tokenChartService from "./tokenChart.service";
+
 
 
 
@@ -15,5 +17,6 @@ export {
     coinMetricsService,
     currencyExchangeRatesService,
     coinChatsService,
-    uptosPumpLegendService
+    uptosPumpLegendService,
+    tokenChartService
 };

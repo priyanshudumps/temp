@@ -28,6 +28,9 @@ const envVarsSchema = Joi.object()
       .required()
       .description('Coin Market Cap API Key'),
     EXCHANGE_RATE_API_KEY: Joi.string(),
+    REDIS_HOST: Joi.string().default('localhost').description('Redis host'),
+    REDIS_PORT: Joi.number().default(6379).description('Redis port'),
+    REDIS_PASSWORD: Joi.string().allow('').description('Redis password'),
   })
   .unknown();
 
@@ -59,6 +62,11 @@ const config: AppConfig = {
   coingeckoApiKey: envVars.COINGECKO_KEY,
   coinMarketCapApiKey: envVars.COIN_MARKET_CAP_API_KEY,
   exchangeRateApiKey: envVars.EXCHANGE_RATE_API_KEY,
+  redis: {
+    host: envVars.REDIS_HOST,
+    port: Number(envVars.REDIS_PORT),
+    password: envVars.REDIS_PASSWORD,
+  },
 };
 
 export default config;

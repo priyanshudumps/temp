@@ -5,6 +5,7 @@ import * as coinMarketcapClient from './coinmarketcap.client';
 import * as coinGeckoClient from './coingecko.client';
 import * as exchangeRateClient from './exchangeRateApi.client';
 import * as geckoterminalClient from './geckoterminal.client';
+import * as geckoterminalPoolsClient from './geckoterminalPools.client';
 // uptosPump
 import uptosPumpClient from './uptosPumpCoinList.client';
 import * as uptosPumpChatsClient from './uptosPumpChats.client';
@@ -20,6 +21,7 @@ export default {
   coinGeckoClient,
   exchangeRateClient,
   geckoterminalClient,
+  geckoterminalPoolsClient,
   uptosPumpClient,
   uptosPumpChatsClient,
   uptosPumpLegendClient,
