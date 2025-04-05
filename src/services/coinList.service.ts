@@ -3,6 +3,7 @@ import CoinClients from './clients';
 import constants from '../constants';
 import logger from '../config/logger';
 import { ICoin, ICoinLinks, ICoinScore, ICoinMetrics } from '../types';
+import * as emojiCoinService from './emojiCoin.service';
 
 const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
   logger.info("Starting to gather API data for all tokens in Panora coin list");
@@ -188,6 +189,89 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
     logger.info(`Finished inserting or updating ${UptosCoinArray.length} coins from Uptos Pump.`);
   } catch (error) {
     logger.error(`Error updating coin list data from Uptos Pump: ${(error as Error).message}`);
+  }
+
+  logger.info("Starting to gather API data for all tokens in EmojiCoin tickers");
+
+  try {
+    const emojiCoinTickersResponse = await emojiCoinService.getAllEmojiCoinTickers(500, 2000);
+    const emojiCoinTickers = emojiCoinTickersResponse.tickers;
+    
+    if (emojiCoinTickers.length > 0) {
+      logger.info(`Successfully fetched ${emojiCoinTickers.length} EmojiCoin tickers`);
+      console.log(emojiCoinTickers[0]);
+      
+      for (const ticker of emojiCoinTickers) {
+        const coinId = ticker.ticker_id;
+        
+        if (!coinId) {
+          logger.warn(`Skipping EmojiCoin ticker with missing ID`);
+          continue;
+        }
+        
+        // Initialize cache objects if they don't exist
+        if (!constants.cache.COINS[coinId]) {
+          constants.cache.COINS[coinId] = {} as ICoin;
+        }
+        if (!constants.cache.COIN_SCORE[coinId]) {
+          constants.cache.COIN_SCORE[coinId] = {} as ICoinScore;
+        }
+        if (!constants.cache.COIN_METRICS[coinId]) {
+          constants.cache.COIN_METRICS[coinId] = {} as ICoinMetrics;
+        }
+        
+        // Parse numeric values
+        const lastPrice = parseFloat(ticker.last_price);
+        const baseVolume = parseFloat(ticker.base_volume);
+        const targetVolume = parseFloat(ticker.target_volume);
+        const liquidityInUsd = parseFloat(ticker.liquidity_in_usd);
+        
+        // Update coin data
+        constants.cache.COINS[coinId].coin_id = coinId;
+        constants.cache.COINS[coinId].coin_type_legacy = ticker.base_currency;
+        constants.cache.COINS[coinId].coin_symbol = ticker.pool_id; 
+        constants.cache.COINS[coinId].coin_name = `EmojiCoin ${ticker.pool_id}`; 
+        constants.cache.COINS[coinId].coin_decimals = 8; // Default for Aptos coins if not specified
+        
+        // Update coin score data
+        constants.cache.COIN_SCORE[coinId].coin_id = coinId;
+        
+        // Update coin metrics data
+        constants.cache.COIN_METRICS[coinId].coin_id = coinId;
+        constants.cache.COIN_METRICS[coinId].price_usd = lastPrice;
+        constants.cache.COIN_METRICS[coinId].volume_24hr = targetVolume;
+        constants.cache.COIN_METRICS[coinId].tvl = liquidityInUsd;
+        constants.cache.COIN_METRICS[coinId].infinite_supply = false; // Default value
+      }
+      
+      // Filter to get only EmojiCoin data (filtering by ticker_id pattern)
+      const EmojiCoinArray = Object.values(constants.cache.COINS).filter(coin => 
+        coin.coin_id && coin.coin_id.includes('::coin_factory::Emojicoin')
+      );
+      const EmojiCoinScoresArray = Object.values(constants.cache.COIN_SCORE).filter(score => 
+        score.coin_id && score.coin_id.includes('::coin_factory::Emojicoin')
+      );
+      const EmojiCoinMetricsArray = Object.values(constants.cache.COIN_METRICS).filter(metrics => 
+        metrics.coin_id && metrics.coin_id.includes('::coin_factory::Emojicoin')
+      );
+      
+      if (EmojiCoinArray.length > 0) {
+        // First insert coins to maintain foreign key constraints
+        await methods.coins.addMultipleCoinsOrUpdate(EmojiCoinArray);
+        await Promise.all([
+          methods.coinScores.addMultipleCoinScoresOrUpdate(EmojiCoinScoresArray),
+          methods.coinMetrics.addMultipleCoinMetricsDataOrUpdate(EmojiCoinMetricsArray),
+        ]);
+        
+        logger.info(`Finished inserting or updating ${EmojiCoinArray.length} coins from EmojiCoin tickers.`);
+      } else {
+        logger.info("No EmojiCoin data to insert or update.");
+      }
+    } else {
+      logger.info("No EmojiCoin tickers data retrieved.");
+    }
+  } catch (error) {
+    logger.error(`Error updating coin list data from EmojiCoin tickers: ${(error as Error).message}`);
   }
 };
 

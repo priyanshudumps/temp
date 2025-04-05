@@ -12,6 +12,8 @@ import * as uptosPumpChatsClient from './uptosPumpChats.client';
 import * as uptosPumpLegendClient from './uptosPumpLegend.client';
 import * as uptosPumpHoldersClient from './uptosPumpHolders.client';
 import * as uptosPumpChartsClient from './uptosPump.charts.client';
+// emojiCoin
+import emojiCoinTickersClient from './emojiCoinTickers.client';
 
 export default {
   hippoCoinClient,
@@ -26,5 +28,6 @@ export default {
   uptosPumpChatsClient,
   uptosPumpLegendClient,
   uptosPumpHoldersClient,
-  uptosPumpChartsClient
+  uptosPumpChartsClient,
+  emojiCoinTickersClient
 };

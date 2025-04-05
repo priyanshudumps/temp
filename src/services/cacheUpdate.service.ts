@@ -1,6 +1,7 @@
 import methods from '../methods';
 import constants from '../constants';
 import { ICoin, ICoinLinks, ICoinScore, ICoinDexMetrics, ICoinMetrics, ICoinChat } from '../types';
+import logger from '../config/logger';
 
 const updateCachedCoinData = async (): Promise<void> => {
   const allCoins = await methods.coins.getAllCoins();
@@ -44,16 +45,10 @@ async function updateCachedCoinMetricsData(): Promise<void> {
 }
 
 const updateCachedCoinChatsData = async (): Promise<void> => {
-  // For chats, we need to organize by coin_id
-  const allCoinChats = await methods.coinChats.getAllCoinChats();
-  constants.cache.COIN_CHATS = {};
+
+  constants.cache.COIN_CHATS = constants.cache.COIN_CHATS || {};
   
-  for (const coinChat of allCoinChats) {
-    if (!constants.cache.COIN_CHATS[coinChat.coin_id]) {
-      constants.cache.COIN_CHATS[coinChat.coin_id] = [];
-    }
-    constants.cache.COIN_CHATS[coinChat.coin_id].push(coinChat);
-  }
+  logger.info("Coin chats are now managed via Redis cache, skipping database fetch");
 };
 
 export default {

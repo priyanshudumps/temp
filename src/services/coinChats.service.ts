@@ -1,11 +1,15 @@
-import methods from '../methods';
 import CoinClients from './clients';
 import constants from '../constants';
 import logger from '../config/logger';
 import { ICoinChat } from '../types';
+import redisCache from '../utils/redisCache';
+
+// Cache expiry time: 5 minutes (300 seconds)
+const CACHE_TTL = 300;
+const CACHE_PREFIX = 'coin:chats';
 
 const InsertOrUpdateCoinChatsData = async (): Promise<void> => {
-  logger.info("Starting to insert or update coin chats data from Uptos Pump");
+  logger.info("Starting to fetch and cache coin chats data from Uptos Pump");
   
   try {
     const addresses = Object.keys(constants.cache.COINS);
@@ -58,9 +62,16 @@ const InsertOrUpdateCoinChatsData = async (): Promise<void> => {
           constants.cache.COIN_CHATS[coin_id].push(chatData);
         }
         
+        // Instead of saving to PostgreSQL, store in Redis cache
         if (coinChatsData.length > 0) {
-          await methods.coinChats.addMultipleCoinChatsOrUpdate(coinChatsData);
-          logger.info(`Added ${coinChatsData.length} chats for coin ${coin_id}`);
+          const cacheKey = redisCache.createCacheKey(CACHE_PREFIX, coin_id, 'default', '0');
+          
+          await redisCache.setCache(cacheKey, {
+            coin_id: coin_id,
+            chats: coinChatsData
+          }, CACHE_TTL);
+          
+          logger.info(`Cached ${coinChatsData.length} chats for coin ${coin_id} in Redis`);
         }
         
       } catch (error) {
@@ -68,10 +79,12 @@ const InsertOrUpdateCoinChatsData = async (): Promise<void> => {
       }
     }
     
-    logger.info("Finished inserting or updating coin chats data");
+    logger.info("Finished caching coin chats data");
   } catch (error) {
     logger.error(`Error updating coin chats data: ${(error as Error).message}`);
   }
 };
 
-export default { InsertOrUpdateCoinChatsData };
+export default {
+  InsertOrUpdateCoinChatsData
+};

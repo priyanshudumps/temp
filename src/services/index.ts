@@ -3,12 +3,11 @@ import coinListService from "./coinList.service";
 import dexDataService from "./dexData.service";
 import coinMetricsService from "./coinMetrics.service";
 import currencyExchangeRatesService from "./currencyExchangeRates.service";
-import coinChatsService from "./coinChats.service"; // Add this line
+import coinChatsService from "./coinChats.service";
+import coinChatsRedisService from "./coinChatsRedis.service";
 import uptosPumpLegendService from "./uptosPumpLegend.service";
-import tokenChartService from "./tokenChart.service";
-
-
-
+import * as tokenChartService from "./tokenChart.service";
+import emojiCoinService from "./emojiCoin.service";
 
 export {
     cachingFunctions,
@@ -17,6 +16,8 @@ export {
     coinMetricsService,
     currencyExchangeRatesService,
     coinChatsService,
+    coinChatsRedisService,
     uptosPumpLegendService,
-    tokenChartService
+    tokenChartService,
+    emojiCoinService
 };
