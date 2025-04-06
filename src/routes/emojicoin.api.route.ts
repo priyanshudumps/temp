@@ -53,7 +53,7 @@ router.get(
     // Get all tickers with pagination
     const tickersResponse = await emojiCoinService.getAllEmojiCoinTickers(
       parsedLimit,
-      parsedLimit + parsedSkip, 
+      undefined, 
       false // Use cache for performance
     );
     

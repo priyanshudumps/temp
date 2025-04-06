@@ -105,7 +105,7 @@ interface EmojiCoinTickersResponse {
 /**
  * Get all tickers with pagination support
  * @param batchLimit Number of tickers to fetch in each batch
- * @param maxTickers Maximum total tickers to fetch
+ * @param maxTickers Maximum total tickers to fetch (only used for caching key)
  * @param skipCache Whether to skip checking the cache
  * @returns Object containing all fetched tickers
  */
@@ -128,19 +128,20 @@ export const getAllEmojiCoinTickers = async (
       }
     }
     
-    logger.info(`Fetching all EmojiCoin tickers with pagination (max: ${maxTickers})`);
+    logger.info(`Fetching all EmojiCoin tickers `);
     
     const allTickers: IEmojiCoinTicker[] = [];
     let hasMoreData = true;
     let skip = 0;
     
-    // Fetch data in batches with pagination
-    while (hasMoreData && allTickers.length < maxTickers) {
+    // Fetch data in batches with pagination until we get an empty response
+    while (hasMoreData) {
       try {
         const batchTickers = await CoinClients.emojiCoinTickersClient(batchLimit, skip);
         
         if (batchTickers.length === 0) {
           hasMoreData = false;
+          logger.info(`No more tickers found, finished fetching`);
         } else {
           allTickers.push(...batchTickers);
           skip += batchLimit;
@@ -154,7 +155,7 @@ export const getAllEmojiCoinTickers = async (
     }
     
     const result: EmojiCoinTickersResponse = {
-      tickers: allTickers.slice(0, maxTickers)
+      tickers: allTickers
     };
     
     await redisCache.setCache(cacheKey, result, CACHE_TTL_TICKERS);

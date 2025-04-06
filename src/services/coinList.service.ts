@@ -194,7 +194,7 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
   logger.info("Starting to gather API data for all tokens in EmojiCoin tickers");
 
   try {
-    const emojiCoinTickersResponse = await emojiCoinService.getAllEmojiCoinTickers(500, 2000);
+    const emojiCoinTickersResponse = await emojiCoinService.getAllEmojiCoinTickers(500);
     const emojiCoinTickers = emojiCoinTickersResponse.tickers;
     
     if (emojiCoinTickers.length > 0) {
