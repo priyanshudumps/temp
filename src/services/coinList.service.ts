@@ -10,7 +10,7 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
   
   try {
     const panoraCoinList = await CoinClients.panoraCoinClient();
-    console.log(panoraCoinList[0]);
+   // console.log(panoraCoinList[0]);
 
     for (const coin of panoraCoinList) {
       // since tokenaddress can be null using faAddress as the key
@@ -89,7 +89,7 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
 
   try {
     const uptosPumpCoinList = await CoinClients.uptosPumpClient();
-    console.log(uptosPumpCoinList[0]);
+    //console.log(uptosPumpCoinList[0]);
     
     for (const coin of uptosPumpCoinList) {
       // Use addr as the coin_id for Uptos Pump coins
@@ -199,7 +199,7 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
     
     if (emojiCoinTickers.length > 0) {
       logger.info(`Successfully fetched ${emojiCoinTickers.length} EmojiCoin tickers`);
-      console.log(emojiCoinTickers[0]);
+      //console.log(emojiCoinTickers[0]);
       
       for (const ticker of emojiCoinTickers) {
         const coinId = ticker.ticker_id;

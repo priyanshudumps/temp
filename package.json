@@ -9,6 +9,7 @@
     "dev": "cross-env NODE_ENV=development nodemon --exec ts-node src/server.ts",
     "build": "rimraf dist && tsc",
     "migrate": "ts-node src/migrations/migrations.ts up",
+    "migrate:down": "ts-node src/migrations/migrations.ts down",
     "format": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss}'",
     "check": "prettier --check '**/*.{js,jsx,ts,tsx,json,css,scss}'"
   },

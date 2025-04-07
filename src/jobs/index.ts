@@ -14,14 +14,14 @@ const startJobs = async () => {
   });
 
   // schedule for every 5 minutes
-  schedule.scheduleJob("*/5 * * * *", () => {
+  schedule.scheduleJob("*/1 * * * *", () => {
     services.dexDataService();
   });
 
   // schedule for every 10 minutes, TODO: change this according to CG & CMC rate limits
-  schedule.scheduleJob("*/10 * * * *", () => {
-    services.coinMetricsService.InsertOrUpdateCoinMetricsData();
-  });
+  // schedule.scheduleJob("*/10 * * * *", () => {
+  //   services.coinMetricsService.InsertOrUpdateCoinMetricsData();
+  // });
 
   // schedule for every 12 hours curr
   schedule.scheduleJob("0 */12 * * *", () => {

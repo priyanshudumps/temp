@@ -9,9 +9,17 @@ const InsertOrUpdateDataFromDexes = async (): Promise<void> => {
   
   try {
     const addresses = Object.keys(constants.cache.COINS);
-    
+
+   
+
+  
+
     for (const address of addresses) {
-      const dexscreenerData = await CoinClients.dexscreenerData.fetchCoinDetailsFromAddress(address);
+      if(constants.cache.COINS[address].coin_address_fungible!==null){
+       // console.log(constants.cache.COINS[address].coin_address_fungible)
+        //console.log(constants.cache.COINS[address])
+
+        const dexscreenerData = await CoinClients.dexscreenerData.fetchCoinDetailsFromAddress(address);
       
       if (dexscreenerData.pairs.length > 0) {
         constants.cache.COIN_DEX_METRICS[address] = [];
@@ -75,6 +83,8 @@ const InsertOrUpdateDataFromDexes = async (): Promise<void> => {
           }
         }
       }
+      }
+      
     }
     
     logger.info("Finished inserting or updating dex data from dexscreener.");

@@ -1,6 +1,7 @@
 import express, { Router } from 'express';
 import tokenChartRoute from './tokenChart.route';
 import coinChatsRoute from './coinChats.route';
+import coinHoldersRoute from './coinHolders.route';
 import emojiCoinRoute from './emojiCoin.route';
 import emojicoinApiRoute from './emojicoin.api.route';
 
@@ -19,6 +20,10 @@ const defaultRoutes: Route[] = [
   {
     path: '/coin-chats',
     route: coinChatsRoute,
+  },
+  {
+    path: '/coin-holders',
+    route: coinHoldersRoute,
   },
   {
     path: '/emoji-coins',

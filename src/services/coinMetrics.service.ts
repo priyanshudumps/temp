@@ -186,6 +186,7 @@ const InsertOrUpdateCoinMetricsData = async (): Promise<void> => {
       coinmarketcapIdToCoinIds[coin.coinmarketcap_id] =
         coinmarketcapIdToCoinIds[coin.coinmarketcap_id] || [];
       coinmarketcapIdToCoinIds[coin.coinmarketcap_id].push(coin.coin_id);
+      
     } else if (coin.coingecko_id) {
       coinIdToCoingeckoId[coin.coingecko_id] =
         coinIdToCoingeckoId[coin.coingecko_id] || [];
@@ -212,6 +213,7 @@ const InsertOrUpdateCoinMetricsData = async (): Promise<void> => {
         await CoinClients.coinMarketcapClient.getLatestQuoteByIds(
           coinMarketcapIdSet
         );
+        console.log(coinMarketCapData)
       if (coinMarketCapData.status.error_code) {
         logger.error(
           `Error fetching coin metrics data from coinmarketcap: ${coinMarketCapData.status.error_message}`
@@ -287,87 +289,87 @@ const InsertOrUpdateCoinMetricsData = async (): Promise<void> => {
       }
     }
 
-    // Process Uptos Pump data for coins with addresses containing '::'
-    const uptosCoinIds = Object.keys(constants.cache.COINS).filter(id => id.includes('::'));
-    logger.info(`Processing metrics for ${uptosCoinIds.length} Uptos coins with rate limiting`);
+    // // Process Uptos Pump data for coins with addresses containing '::'
+    // const uptosCoinIds = Object.keys(constants.cache.COINS).filter(id => id.includes('::'));
+    // logger.info(`Processing metrics for ${uptosCoinIds.length} Uptos coins with rate limiting`);
 
-    // Process in smaller batches with delay to avoid rate limiting
-    const BATCH_SIZE = 5;
-    const DELAY_BETWEEN_BATCHES = 5000; // 5 seconds between batches
-    const DELAY_BETWEEN_REQUESTS = 1000; // 1 second between individual requests
+    // // Process in smaller batches with delay to avoid rate limiting
+    // const BATCH_SIZE = 500;
+    // const DELAY_BETWEEN_BATCHES = 0; // 5 seconds between batches
+    // const DELAY_BETWEEN_REQUESTS = 0; // 1 second between individual requests
 
-    // Split into batches
-    const batchedUptosCoinIds = [];
-    for (let i = 0; i < uptosCoinIds.length; i += BATCH_SIZE) {
-      batchedUptosCoinIds.push(uptosCoinIds.slice(i, i + BATCH_SIZE));
-    }
+    // // Split into batches
+    // const batchedUptosCoinIds = [];
+    // for (let i = 0; i < uptosCoinIds.length; i += BATCH_SIZE) {
+    //   batchedUptosCoinIds.push(uptosCoinIds.slice(i, i + BATCH_SIZE));
+    // }
 
-    // Process each batch
-    // todo: implement db insertions for each batch 
+    // // Process each batch
+    // // todo: implement db insertions for each batch 
 
-    for (let batchIndex = 0; batchIndex < batchedUptosCoinIds.length; batchIndex++) {
-      const batch = batchedUptosCoinIds[batchIndex];
-      logger.info(`Processing batch ${batchIndex + 1}/${batchedUptosCoinIds.length} (${batch.length} coins)`);
+    // for (let batchIndex = 0; batchIndex < batchedUptosCoinIds.length; batchIndex++) {
+    //   const batch = batchedUptosCoinIds[batchIndex];
+    //   logger.info(`Processing batch ${batchIndex + 1}/${batchedUptosCoinIds.length} (${batch.length} coins)`);
       
    
-      for (const coinId of batch) {
-        try {
-          logger.info(`Fetching chart data for ${coinId}`);
-          const chartData = await CoinClients.uptosPumpChartsClient.getTokenChartData(coinId);
+    //   for (const coinId of batch) {
+    //     try {
+    //       logger.info(`Fetching chart data for ${coinId}`);
+    //       const chartData = []//await CoinClients.uptosPumpChartsClient.getTokenChartData(coinId);
           
-          await sleep(DELAY_BETWEEN_REQUESTS);
+    //       await sleep(DELAY_BETWEEN_REQUESTS);
           
-          // Fetch holders data for the coin
-          logger.info(`Fetching holders data for ${coinId}`);
-          const holdersData = await CoinClients.uptosPumpHoldersClient.getTokenHolders(coinId);
+    //       // Fetch holders data for the coin
+    //       logger.info(`Fetching holders data for ${coinId}`);
+    //       const holdersData = []//await CoinClients.uptosPumpHoldersClient.getTokenHolders(coinId);
           
-          if (!constants.cache.COIN_METRICS[coinId]) {
-            constants.cache.COIN_METRICS[coinId] = {} as ICoinMetrics;
-          }
+    //       if (!constants.cache.COIN_METRICS[coinId]) {
+    //         constants.cache.COIN_METRICS[coinId] = {} as ICoinMetrics;
+    //       }
           
-          constants.cache.COIN_METRICS[coinId].coin_id = coinId;
+    //       constants.cache.COIN_METRICS[coinId].coin_id = coinId;
           
-          // Save the raw chart data
-          constants.cache.COIN_METRICS[coinId].raw_charts = chartData;
+    //       // Save the raw chart data
+    //       constants.cache.COIN_METRICS[coinId].raw_charts = null;
           
-          if (holdersData && Array.isArray(holdersData)) {
-            constants.cache.COIN_METRICS[coinId].holders = holdersData.length;
-          }
+    //       if (holdersData && Array.isArray(holdersData)) {
+    //         constants.cache.COIN_METRICS[coinId].holders = null;
+    //       }
           
-          if (chartData && chartData.length > 0) {
-            const sortedChartData = [...chartData].sort((a, b) => 
-              new Date(b.date).getTime() - new Date(a.date).getTime()
-            );
+    //       if (chartData && chartData.length > 0) {
+    //         const sortedChartData = [...chartData].sort((a, b) => 
+    //           new Date(b.date).getTime() - new Date(a.date).getTime()
+    //         );
             
-            constants.cache.COIN_METRICS[coinId].price_usd = sortedChartData[0].close;
+    //         constants.cache.COIN_METRICS[coinId].price_usd = sortedChartData[0].close;
             
-            const priceChanges = calculatePriceChanges(chartData);
-            constants.cache.COIN_METRICS[coinId].price_change_5m = priceChanges.price_change_5m;
-            constants.cache.COIN_METRICS[coinId].price_change_1hr = priceChanges.price_change_1hr;
-            constants.cache.COIN_METRICS[coinId].price_change_6hr = priceChanges.price_change_6hr;
-            constants.cache.COIN_METRICS[coinId].price_change_24h = priceChanges.price_change_24h;
-            constants.cache.COIN_METRICS[coinId].price_change_7d = priceChanges.price_change_7d;
-            constants.cache.COIN_METRICS[coinId].price_change_30d = priceChanges.price_change_30d;
+    //         const priceChanges = calculatePriceChanges(chartData);
+    //         constants.cache.COIN_METRICS[coinId].price_change_5m = priceChanges.price_change_5m;
+    //         constants.cache.COIN_METRICS[coinId].price_change_1hr = priceChanges.price_change_1hr;
+    //         constants.cache.COIN_METRICS[coinId].price_change_6hr = priceChanges.price_change_6hr;
+    //         constants.cache.COIN_METRICS[coinId].price_change_24h = priceChanges.price_change_24h;
+    //         constants.cache.COIN_METRICS[coinId].price_change_7d = priceChanges.price_change_7d;
+    //         constants.cache.COIN_METRICS[coinId].price_change_30d = priceChanges.price_change_30d;
             
-            const volumeData = calculateVolume(chartData);
-            constants.cache.COIN_METRICS[coinId].volume_24hr = volumeData.volume_24hr;
-            constants.cache.COIN_METRICS[coinId].volume_7d = volumeData.volume_7d;
-            constants.cache.COIN_METRICS[coinId].volume_30d = volumeData.volume_30d;
-          }
+    //         const volumeData = calculateVolume(chartData);
+    //         constants.cache.COIN_METRICS[coinId].volume_24hr = volumeData.volume_24hr;
+    //         constants.cache.COIN_METRICS[coinId].volume_7d = volumeData.volume_7d;
+    //         constants.cache.COIN_METRICS[coinId].volume_30d = volumeData.volume_30d;
+    //       }
           
-          logger.info(`Successfully processed metrics for Uptos coin: ${coinId}`);
-        } catch (error) {
-          logger.error(`Error processing Uptos metrics for coin ${coinId}: ${(error as Error).message}`);
-        }
+    //       logger.info(`Successfully processed metrics for Uptos coin: ${coinId}`);
+    //     } catch (error) {
+    //       logger.error(`Error processing Uptos metrics for coin ${coinId}: ${(error as Error).message}`);
+    //     }
         
-        await sleep(DELAY_BETWEEN_REQUESTS);
-      }
+    //     await sleep(DELAY_BETWEEN_REQUESTS);
+    //   }
       
-      if (batchIndex < batchedUptosCoinIds.length - 1) {
-        logger.info(`Waiting ${DELAY_BETWEEN_BATCHES/1000} seconds before processing next batch...`);
-        await sleep(DELAY_BETWEEN_BATCHES);
-      }
-    }
+    //   if (batchIndex < batchedUptosCoinIds.length - 1) {
+    //     logger.info(`Waiting ${DELAY_BETWEEN_BATCHES/1000} seconds before processing next batch...`);
+    //     await sleep(DELAY_BETWEEN_BATCHES);
+    //   }
+    // }
 
     // Update the database with all coin metrics
     await methods.coinMetrics.addMultipleCoinMetricsDataOrUpdate(

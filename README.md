@@ -28,6 +28,43 @@
 - `DELETE /coin-chats/:coinId/cache` - Invalidate cache for a specific coin's chats
   - **Example**: `DELETE /coin-chats/APT/cache`
 
+### Coin Holders (Redis-cached)
+
+- `GET /coin-holders/:coinId` - Get holders data for a specific coin
+  - **Query Parameters**:
+    - `skipCache` - Set to 'true' to bypass cache (default: 'false')
+  - **Example**: `GET /coin-holders/0x13b72f092e5fa171eb85fed63b0c71786f7c826a96ff8c5b832770135a6a008::CRAB::CRAB`
+  - **Response**:
+    ```json
+    {
+      "coin_id": "0x2250f54ffa4cc910af37a7e9f35691e40a81b5aa30d8664d07093c43ab17d628::Fuck::Fuck",
+      "holders": [
+        {
+          "tokenAddr": "0x2250f54ffa4cc910af37a7e9f35691e40a81b5aa30d8664d07093c43ab17d628::Fuck::Fuck",
+          "holderAddr": "0x123...",
+          "holderName": "Holder Name",
+          "percentage": "10.5%",
+          "isDev": false
+        }
+      ],
+      "dev_percentage": "25.5%",
+      "top_holders": [
+        {
+          "tokenAddr": "0x2250f54ffa4cc910af37a7e9f35691e40a81b5aa30d8664d07093c43ab17d628::Fuck::Fuck",
+          "holderAddr": "0x123...",
+          "holderName": "Top Holder",
+          "percentage": "10.5%",
+          "isDev": true
+        }
+      ],
+      "cached": true,
+      "cache_time": "2024-03-14T12:00:00.000Z"
+    }
+    ```
+
+- `DELETE /coin-holders/:coinId/cache` - Invalidate cache for a specific coin's holders
+  - **Example**: `DELETE /coin-holders/0x2250f54ffa4cc910af37a7e9f35691e40a81b5aa30d8664d07093c43ab17d628::Fuck::Fuck/cache`
+
 ### Emoji Coins
 
 - `GET /emoji-coins/trending` - Get trending emoji coins data
