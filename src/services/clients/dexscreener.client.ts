@@ -110,7 +110,7 @@ interface AggregatedCoinData {
 
 const fetchCoinDetailsFromAddress = async (address: string): Promise<DexScreenerResponse> => {
   const endpoint = `latest/dex/tokens/${address}`;
-  const url = `${BASE_URL}/${endpoint},`;
+  const url = `${BASE_URL}/${endpoint}`;
   
   try {
     const response = await fetch(url);
