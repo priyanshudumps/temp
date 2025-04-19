@@ -10,6 +10,8 @@ export interface ICoin {
     coin_logo_url?: string | null;
     coingecko_id?: string | null;
     coinmarketcap_id?: string | null;
+    is_graduated?: string | null;
+    bonding_curve_progress?: number | null;
     created_at?: Date;
     updated_at?: Date;
   }

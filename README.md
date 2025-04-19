@@ -16,6 +16,18 @@
 - `DELETE /token-charts/:tokenAddress/cache` - Invalidate cache for a specific token
   - **Example**: `DELETE /token-charts/0x1::aptos_coin::AptosCoin/cache`
 
+### Uptos Pump Charts
+
+- `GET /uptos-pump-charts/:tokenAddress` - Get chart data specifically from Uptos Pump
+  - **Query Parameters**:
+    - `startDate` - Filter data from this date (optional)
+    - `endDate` - Filter data until this date (optional)
+    - `skipCache` - Set to 'true' to bypass cache (default: 'false')
+  - **Example**: `GET /uptos-pump-charts/0x7159ef0384d530ba5aa176472c329897522b1b4a48363eacec4d7ff850c4e62e::APTARDIO::APTARDIO`
+
+- `DELETE /uptos-pump-charts/:tokenAddress/cache` - Invalidate cache for Uptos Pump chart data
+  - **Example**: `DELETE /uptos-pump-charts/0x7159ef0384d530ba5aa176472c329897522b1b4a48363eacec4d7ff850c4e62e::APTARDIO::APTARDIO/cache`
+
 ### Coin Chats (Redis-cached)
 
 - `GET /coin-chats/:coinId` - Get chat data for a specific coin

@@ -4,6 +4,7 @@ import coinChatsRoute from './coinChats.route';
 import coinHoldersRoute from './coinHolders.route';
 import emojiCoinRoute from './emojiCoin.route';
 import emojicoinApiRoute from './emojicoin.api.route';
+import uptosPumpChartRoute from './uptosPumpChart.route';
 
 const router: Router = express.Router();
 
@@ -32,6 +33,10 @@ const defaultRoutes: Route[] = [
   {
     path: '/api/emojicoin',
     route: emojicoinApiRoute,
+  },
+  {
+    path: '/uptos-pump-charts',
+    route: uptosPumpChartRoute,
   },
   // Other routes can be added here
 ];

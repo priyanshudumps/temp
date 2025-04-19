@@ -12,6 +12,11 @@ CREATE TABLE IF NOT EXISTS coins (
  
         coingecko_id VARCHAR(255) NULL,
         coinmarketcap_id VARCHAR(255) NULL,
+        is_graduated VARCHAR(255) NULL,
+        bonding_curve_progress INTEGER NULL,
+        market_id VARCHAR(255) NULL,
+        market_cap_usd INTEGER NULL,
+        
 
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW(),

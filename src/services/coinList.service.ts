@@ -61,6 +61,8 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
       constants.cache.COINS[coin.faAddress].coin_logo_url = coin.logoUrl;
       constants.cache.COINS[coin.faAddress].coingecko_id = coin.coinGeckoId;
       constants.cache.COINS[coin.faAddress].coinmarketcap_id = coin.coinMarketCapId;
+      constants.cache.COINS[coin.faAddress].is_graduated = null;
+      constants.cache.COINS[coin.faAddress].bonding_curve_progress = null;
 
       constants.cache.COIN_SCORE[coin.faAddress].is_banned_panora = coin.isBanned;
 
@@ -135,6 +137,34 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
       constants.cache.COINS[coinId].coin_decimals = 8; // Default for Aptos coins if not specified
       constants.cache.COINS[coinId].coin_description = coin.description;
       constants.cache.COINS[coinId].coin_logo_url = coin.img;
+      
+      // Calculate is_graduated based on mCap field
+      constants.cache.COINS[coinId].is_graduated = coin.mCap >= 36210 ? 'true' : 'false';
+      
+      // Calculate bonding_curve_progress based on virtualTokenReserves field
+      try {
+        if (coin.virtualTokenReserves) {
+          const virtualTokenReservesBigInt = BigInt(coin.virtualTokenReserves);
+          const initialTokenReservesBigInt = coin.initialTokenReserves ? BigInt(coin.initialTokenReserves) : BigInt('1000000000000000');
+          
+          if (virtualTokenReservesBigInt.toString() === '200000000000000') {
+            constants.cache.COINS[coinId].bonding_curve_progress = 100; // 100% if equals 200000000000000
+          } else if (virtualTokenReservesBigInt.toString() === '100000000000000') {
+            constants.cache.COINS[coinId].bonding_curve_progress = 50; // 50% if equals 100000000000000
+          } else {
+            // Calculate the percentage
+            const progressPercentage = Number(
+              (virtualTokenReservesBigInt * BigInt(100)) / initialTokenReservesBigInt
+            );
+            constants.cache.COINS[coinId].bonding_curve_progress = progressPercentage > 100 ? 100 : progressPercentage;
+          }
+        } else {
+          constants.cache.COINS[coinId].bonding_curve_progress = null;
+        }
+      } catch (e) {
+        logger.error(`Error calculating bonding curve progress for coin ${coinId}: ${(e as Error).message}`);
+        constants.cache.COINS[coinId].bonding_curve_progress = null;
+      }
       
       constants.cache.COIN_SCORE[coinId].coin_id = coinId;
       constants.cache.COIN_SCORE[coinId].score = coin.repC;
@@ -230,8 +260,14 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
         constants.cache.COINS[coinId].coin_id = coinId;
         constants.cache.COINS[coinId].coin_type_legacy = ticker.base_currency;
         constants.cache.COINS[coinId].coin_symbol = ticker.pool_id; 
-        constants.cache.COINS[coinId].coin_name = `EmojiCoin ${ticker.pool_id}`; 
+        constants.cache.COINS[coinId].coin_name = `EmojiCoin ${ticker.pool_id}`;
         constants.cache.COINS[coinId].coin_decimals = 8; // Default for Aptos coins if not specified
+        
+        // Calculate is_graduated based on last_price field
+        constants.cache.COINS[coinId].is_graduated = lastPrice >= 0.000100297 ? 'true' : 'false';
+        
+        // For bonding curve progress keep it null
+        constants.cache.COINS[coinId].bonding_curve_progress = null;
         
         // Update coin score data
         constants.cache.COIN_SCORE[coinId].coin_id = coinId;
