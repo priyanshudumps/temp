@@ -6,10 +6,13 @@ import { ICoin, ICoinLinks, ICoinScore, ICoinMetrics } from '../types';
 import * as emojiCoinService from './emojiCoin.service';
 
 const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
-  logger.info("Starting to gather API data for all tokens in Panora coin list");
+  logger.info("[Data Aggregation] Starting data aggregation process...");
   
+  // --- Panora Coin List --- 
+  logger.info("[Panora] Starting Panora coin list processing...");
   try {
     const panoraCoinList = await CoinClients.panoraCoinClient();
+    logger.info(`[Panora] Fetched ${panoraCoinList.length} coins from Panora API.`);
    // console.log(panoraCoinList[0]);
 
     for (const coin of panoraCoinList) {
@@ -73,18 +76,18 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
     const CoinScoresArray = Object.values(constants.cache.COIN_SCORE);
     const CoinLinksArray = Object.values(constants.cache.COIN_LINKS);
 
-    // this is outside promise.all because we need to wait
-    // for coins to be inserted first so that we do not violate foreign key constraints
-    // if any new coin is added
+    logger.info(`[Panora] Prepared ${CoinsArray.length} coin records for database update.`);
     await methods.coins.addMultipleCoinsOrUpdate(CoinsArray);
+    logger.info(`[Panora] Inserted/Updated ${CoinsArray.length} coins.`);
     await Promise.all([
       methods.coinLinks.addMultipleCoinLinksOrUpdate(CoinLinksArray),
       methods.coinScores.addMultipleCoinScoresOrUpdate(CoinScoresArray),
     ]);
+    logger.info(`[Panora] Inserted/Updated related links and scores.`);
     
-    logger.info("Finished inserting or updating coin data from hippo and panora.");
+    logger.info("[Panora] Finished Panora coin list processing.");
   } catch (error) {
-    logger.error(`Error updating coin list data from panora: ${(error as Error).message}`);
+    logger.error(`[Panora] Error processing Panora coin list:`, error);
   }
   
   logger.info("Starting to gather API data for all tokens in Uptos Pump coin list");
@@ -93,12 +96,15 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
     const uptosPumpCoinList = await CoinClients.uptosPumpClient();
     //console.log(uptosPumpCoinList[0]);
     
+    logger.info("[Uptos Pump] Starting Uptos Pump coin list processing...");
+    let skippedCount = 0;
     for (const coin of uptosPumpCoinList) {
       // Use addr as the coin_id for Uptos Pump coins
       const coinId = coin.addr;
       
       if (!coinId) {
-        logger.warn(`Skipping Uptos Pump coin with missing address: ${coin.name}`);
+        logger.warn(`[Uptos Pump] Skipping Uptos Pump coin with missing address: ${coin.name}`);
+        skippedCount++;
         continue;
       }
       
@@ -126,7 +132,7 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
             (virtualTokenReservesBigInt + BigInt(100000000))
           );
         } catch (e) {
-          logger.error(`Error calculating price for coin ${coinId}: ${(e as Error).message}`);
+          logger.error(`[Uptos Pump] Error calculating price for coin ${coinId}:`, e);
         }
       }
       
@@ -162,7 +168,7 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
           constants.cache.COINS[coinId].bonding_curve_progress = null;
         }
       } catch (e) {
-        logger.error(`Error calculating bonding curve progress for coin ${coinId}: ${(e as Error).message}`);
+        logger.error(`[Uptos Pump] Error calculating bonding curve progress for coin ${coinId}:`, e);
         constants.cache.COINS[coinId].bonding_curve_progress = null;
       }
       
@@ -184,7 +190,7 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
           constants.cache.COIN_METRICS[coinId].circulating_supply = circulating_supply;
           constants.cache.COIN_METRICS[coinId].market_cap = price_apt * circulating_supply;
         } catch (e) {
-          logger.error(`Error calculating market metrics for coin ${coinId}: ${(e as Error).message}`);
+          logger.error(`[Uptos Pump] Error calculating market metrics for coin ${coinId}:`, e);
         }
       }
       
@@ -193,32 +199,31 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
       if (coin.telegram) constants.cache.COIN_LINKS[coinId].telegram = coin.telegram;
       if (coin.website) constants.cache.COIN_LINKS[coinId].website = coin.website;
     }
+    if (skippedCount > 0) {
+       logger.warn(`[Uptos Pump] Skipped ${skippedCount} coins due to missing address.`);
+    }
     
-    const UptosCoinArray = Object.values(constants.cache.COINS).filter(coin => 
-      coin.coin_id && coin.coin_id.includes('::')
-    );
-    const UptosCoinScoresArray = Object.values(constants.cache.COIN_SCORE).filter(score => 
-      score.coin_id && score.coin_id.includes('::')
-    );
-    const UptosCoinLinksArray = Object.values(constants.cache.COIN_LINKS).filter(links => 
-      links.coin_id && links.coin_id.includes('::')
-    );
-    const UptosCoinMetricsArray = Object.values(constants.cache.COIN_METRICS).filter(metrics => 
-      metrics.coin_id && metrics.coin_id.includes('::')
-    );
+    // Filter logic adjusted slightly to ensure it only includes Uptos Pump coins
+    const UptosCoinArray = uptosPumpCoinList.map(c => constants.cache.COINS[c.addr]).filter(Boolean); 
+    const UptosCoinScoresArray = uptosPumpCoinList.map(c => constants.cache.COIN_SCORE[c.addr]).filter(Boolean);
+    const UptosCoinLinksArray = uptosPumpCoinList.map(c => constants.cache.COIN_LINKS[c.addr]).filter(Boolean);
+    const UptosCoinMetricsArray = uptosPumpCoinList.map(c => constants.cache.COIN_METRICS[c.addr]).filter(Boolean);
     
     if (UptosCoinArray.length > 0) {
+      logger.info(`[Uptos Pump] Prepared ${UptosCoinArray.length} coin records for database update.`);
       await methods.coins.addMultipleCoinsOrUpdate(UptosCoinArray);
+      logger.info(`[Uptos Pump] Inserted/Updated ${UptosCoinArray.length} coins.`);
       await Promise.all([
         methods.coinLinks.addMultipleCoinLinksOrUpdate(UptosCoinLinksArray),
         methods.coinScores.addMultipleCoinScoresOrUpdate(UptosCoinScoresArray),
         methods.coinMetrics.addMultipleCoinMetricsDataOrUpdate(UptosCoinMetricsArray),
       ]);
+       logger.info(`[Uptos Pump] Inserted/Updated related links, scores, and metrics.`);
     }
     
-    logger.info(`Finished inserting or updating ${UptosCoinArray.length} coins from Uptos Pump.`);
+    logger.info("[Uptos Pump] Finished Uptos Pump coin list processing.");
   } catch (error) {
-    logger.error(`Error updating coin list data from Uptos Pump: ${(error as Error).message}`);
+    logger.error(`[Uptos Pump] Error processing Uptos Pump coin list:`, error);
   }
 
   logger.info("Starting to gather API data for all tokens in EmojiCoin tickers");
@@ -227,15 +232,25 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
     const emojiCoinTickersResponse = await emojiCoinService.getAllEmojiCoinTickers(500);
     const emojiCoinTickers = emojiCoinTickersResponse.tickers;
     
+    logger.info("[EmojiCoin] Starting EmojiCoin tickers processing...");
     if (emojiCoinTickers.length > 0) {
-      logger.info(`Successfully fetched ${emojiCoinTickers.length} EmojiCoin tickers`);
-      //console.log(emojiCoinTickers[0]);
+      logger.info(`[EmojiCoin] Fetched ${emojiCoinTickers.length} tickers from EmojiCoin API.`);
       
-      for (const ticker of emojiCoinTickers) {
+      // Process emoji tickers to get market IDs
+      const processedTickers = await emojiCoinService.processEmojiCoinMarketIds(emojiCoinTickers);
+      logger.info(`[EmojiCoin] Processed market IDs for ${processedTickers.length} tickers.`);
+      
+      // Update the emojicoin-complete-market-data.json file with coin addresses
+      await emojiCoinService.updateMarketDataWithAddresses(emojiCoinTickers);
+      logger.info(`[EmojiCoin] Updated market data JSON with coin addresses.`);
+      
+      let skippedEmojiCount = 0;
+      for (const ticker of processedTickers) {
         const coinId = ticker.ticker_id;
         
         if (!coinId) {
-          logger.warn(`Skipping EmojiCoin ticker with missing ID`);
+          logger.warn(`[EmojiCoin] Skipping ticker with missing ID.`);
+          skippedEmojiCount++;
           continue;
         }
         
@@ -251,11 +266,23 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
         }
         
         // Parse numeric values
-        const lastPrice = parseFloat(ticker.last_price);
-        const baseVolume = parseFloat(ticker.base_volume);
-        const targetVolume = parseFloat(ticker.target_volume);
-        const liquidityInUsd = parseFloat(ticker.liquidity_in_usd);
-        
+        let lastPrice = 0, baseVolume = 0, targetVolume = 0, liquidityInUsd = 0;
+        try {
+             lastPrice = parseFloat(ticker.last_price);
+             baseVolume = parseFloat(ticker.base_volume);
+             targetVolume = parseFloat(ticker.target_volume);
+             liquidityInUsd = parseFloat(ticker.liquidity_in_usd);
+             if (isNaN(lastPrice) || isNaN(baseVolume) || isNaN(targetVolume) || isNaN(liquidityInUsd)) {
+                 logger.warn(`[EmojiCoin] Invalid numeric data for ticker ${coinId}. Skipping metrics update.`);
+                 // Reset potentially NaN values
+                 lastPrice = 0; baseVolume = 0; targetVolume = 0; liquidityInUsd = 0;
+             }
+        } catch (parseError) {
+             logger.error(`[EmojiCoin] Error parsing numeric data for ticker ${coinId}:`, parseError);
+             // Reset potentially NaN values
+             lastPrice = 0; baseVolume = 0; targetVolume = 0; liquidityInUsd = 0;
+        }
+       
         // Update coin data
         constants.cache.COINS[coinId].coin_id = coinId;
         constants.cache.COINS[coinId].coin_type_legacy = ticker.base_currency;
@@ -266,8 +293,19 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
         // Calculate is_graduated based on last_price field
         constants.cache.COINS[coinId].is_graduated = lastPrice >= 0.000100297 ? 'true' : 'false';
         
-        // For bonding curve progress keep it null
-        constants.cache.COINS[coinId].bonding_curve_progress = null;
+        // Calculate bonding curve progress
+        const maxPrice = 0.000100297;
+        const progress = lastPrice >= maxPrice ? 100 : (lastPrice / maxPrice) * 100;
+        constants.cache.COINS[coinId].bonding_curve_progress = Math.round(progress); 
+        
+        // Add market ID and market cap from processed data
+        if ('market_id' in ticker) {
+          constants.cache.COINS[coinId].market_id = ticker.market_id as string;
+        }
+        
+        if ('market_cap_usd' in ticker) {
+          constants.cache.COINS[coinId].market_cap_usd = ticker.market_cap_usd as number;
+        }
         
         // Update coin score data
         constants.cache.COIN_SCORE[coinId].coin_id = coinId;
@@ -279,36 +317,34 @@ const InsertOrUpdateDataFromCoinLists = async (): Promise<void> => {
         constants.cache.COIN_METRICS[coinId].tvl = liquidityInUsd;
         constants.cache.COIN_METRICS[coinId].infinite_supply = false; // Default value
       }
+      if (skippedEmojiCount > 0) {
+          logger.warn(`[EmojiCoin] Skipped ${skippedEmojiCount} tickers due to missing ID.`);
+      }
       
-      // Filter to get only EmojiCoin data (filtering by ticker_id pattern)
-      const EmojiCoinArray = Object.values(constants.cache.COINS).filter(coin => 
-        coin.coin_id && coin.coin_id.includes('::coin_factory::Emojicoin')
-      );
-      const EmojiCoinScoresArray = Object.values(constants.cache.COIN_SCORE).filter(score => 
-        score.coin_id && score.coin_id.includes('::coin_factory::Emojicoin')
-      );
-      const EmojiCoinMetricsArray = Object.values(constants.cache.COIN_METRICS).filter(metrics => 
-        metrics.coin_id && metrics.coin_id.includes('::coin_factory::Emojicoin')
-      );
+      // Filter based on processed tickers to ensure we only try to insert valid ones
+      const EmojiCoinArray = processedTickers.map(t => constants.cache.COINS[t.ticker_id]).filter(Boolean); 
+      const EmojiCoinScoresArray = processedTickers.map(t => constants.cache.COIN_SCORE[t.ticker_id]).filter(Boolean);
+      const EmojiCoinMetricsArray = processedTickers.map(t => constants.cache.COIN_METRICS[t.ticker_id]).filter(Boolean);
       
       if (EmojiCoinArray.length > 0) {
-        // First insert coins to maintain foreign key constraints
+        logger.info(`[EmojiCoin] Prepared ${EmojiCoinArray.length} coin records for database update.`);
         await methods.coins.addMultipleCoinsOrUpdate(EmojiCoinArray);
+        logger.info(`[EmojiCoin] Inserted/Updated ${EmojiCoinArray.length} coins.`);
         await Promise.all([
           methods.coinScores.addMultipleCoinScoresOrUpdate(EmojiCoinScoresArray),
           methods.coinMetrics.addMultipleCoinMetricsDataOrUpdate(EmojiCoinMetricsArray),
         ]);
-        
-        logger.info(`Finished inserting or updating ${EmojiCoinArray.length} coins from EmojiCoin tickers.`);
+        logger.info(`[EmojiCoin] Inserted/Updated related scores and metrics.`);
       } else {
-        logger.info("No EmojiCoin data to insert or update.");
+        logger.info("[EmojiCoin] No valid EmojiCoin data prepared for database update.");
       }
     } else {
-      logger.info("No EmojiCoin tickers data retrieved.");
+      logger.info("[EmojiCoin] No tickers data retrieved from EmojiCoin API.");
     }
   } catch (error) {
-    logger.error(`Error updating coin list data from EmojiCoin tickers: ${(error as Error).message}`);
+    logger.error(`[EmojiCoin] Error processing EmojiCoin tickers:`, error);
   }
+  logger.info("[Data Aggregation] Finished data aggregation process.");
 };
 
 export default { InsertOrUpdateDataFromCoinLists };

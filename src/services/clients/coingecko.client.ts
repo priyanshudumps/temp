@@ -1,7 +1,9 @@
 import config from "../../config/config";
 import logger from "../../config/logger";
+import axios from 'axios';
 
 const BASE_URL = "https://api.coingecko.com/api/v3";
+const PRO_BASE_URL = "https://pro-api.coingecko.com/api/v3";
 const HEADERS = {
   Accept: "application/json",
   "x-cg-api-key": config.coingeckoApiKey,
@@ -115,9 +117,97 @@ const getCoinDataById = async (id: string): Promise<CoinData> => {
   return await response.json();
 };
 
+/**
+ * Get APT price in USD using CoinMarketCap API as a fallback
+ * @returns The price of APT in USD
+ */
+const getAptosPriceFromCoinMarketCap = async (): Promise<number | null> => {
+  try {
+    const url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest';
+    const params = {
+      symbol: 'APT',
+      convert: 'USD'
+    };
+    
+    const response = await axios.get(url, {
+      headers: {
+        'X-CMC_PRO_API_KEY': config.coinMarketCapApiKey,
+        'Accept': 'application/json'
+      },
+      params
+    });
+    
+    if (response.status !== 200) {
+      throw new Error(`CoinMarketCap API responded with status: ${response.status}`);
+    }
+    
+    const data = response.data;
+    
+    // Extract the price from the response
+    if (data && 
+        data.data && 
+        data.data.APT && 
+        data.data.APT.quote && 
+        data.data.APT.quote.USD && 
+        data.data.APT.quote.USD.price) {
+      return data.data.APT.quote.USD.price;
+    }
+    
+    logger.warn("APT price not found in CoinMarketCap response");
+    return null;
+  } catch (error) {
+    logger.error(`Error fetching APT price from CoinMarketCap: ${error}`);
+    return null;
+  }
+};
+
+/**
+ * Get APT price in USD using CoinGecko's free API with fallback to CoinMarketCap
+ * @returns The price of APT in USD
+ */
+const getAptosTokenPrice = async (): Promise<number | null> => {
+  try {
+    // Try CoinGecko first
+    const url = `${BASE_URL}/simple/price`;
+    const params = {
+      ids: "aptos",
+      vs_currencies: "usd"
+    };
+    
+    const searchParams = new URLSearchParams(params);
+    const response = await fetch(`${url}?${searchParams}`, {
+      headers: {
+        Accept: "application/json"
+      }
+    });
+    
+    if (!response.ok) {
+      logger.warn(`CoinGecko API failed with status: ${response.status}. Trying CoinMarketCap...`);
+      return await getAptosPriceFromCoinMarketCap();
+    }
+    
+    const data = await response.json();
+    
+    // Extract the price from the response
+    if (data && data.aptos && data.aptos.usd) {
+      return data.aptos.usd;
+    }
+    
+    // If CoinGecko data doesn't have what we need, try CoinMarketCap
+    logger.warn("APT price not found in CoinGecko response. Trying CoinMarketCap...");
+    return await getAptosPriceFromCoinMarketCap();
+  } catch (error) {
+    logger.error(`Error fetching APT price from CoinGecko: ${error}`);
+    // Try CoinMarketCap as fallback
+    logger.info('Trying CoinMarketCap as fallback...');
+    return await getAptosPriceFromCoinMarketCap();
+  }
+};
+
 export {
   getPriceByIds,
   getCoinDataById,
+  getAptosTokenPrice,
   type PriceData,
   type CoinData
 };

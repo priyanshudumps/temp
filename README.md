@@ -69,6 +69,20 @@
     - `skipCache` - Set to 'true' to bypass cache (default: 'false')
   - **Example**: `GET /emoji-coins/trades/0x0f12f1f89efe283884d30a9b8820c97c4a152294f11db706bc35df5cf9483e7a::coin_factory::Emojicoin_0x1::aptos_coin::AptosCoin`
 
+- `GET /emoji-coins/market-trades/:tokenAddress` - Get market trades for a specific token address
+  - **Query Parameters**:
+    - `page` - Page number for pagination (default: 1)
+    - `limit` - Number of trades to return per page (default: 100)
+    - `skipCache` - Set to 'true' to bypass cache (default: 'false')
+  - **Example**: `GET /emoji-coins/market-trades/0xb7397fc01a0dd28b9ac64b06a35b7c68454f88de5d35bb3dc8a9ffcc16306875::coin_factory::Emojicoin?page=1&limit=50`
+
+- `GET /emoji-coins/holders/:tokenAddress` - Get holders data for a specific emoji coin
+  - **Query Parameters**:
+    - `offset` - Offset for pagination (default: 0)
+    - `limit` - Number of holders to return per page (default: 100)
+    - `skipCache` - Set to 'true' to bypass cache (default: 'false')
+  - **Example**: `GET /emoji-coins/holders/0xb7397fc01a0dd28b9ac64b06a35b7c68454f88de5d35bb3dc8a9ffcc16306875::coin_factory::Emojicoin?offset=0&limit=50`
+
 - `GET /emoji-coins/coingecko/historical_trades` - Get historical trades in CoinGecko format
   - **Query Parameters**:
     - `ticker_id` - The ticker ID of the emoji coin (required)
@@ -86,8 +100,26 @@
 - `DELETE /emoji-coins/trades/:marketAddress/cache` - Invalidate cache for a specific emoji coin's trades
   - **Example**: `DELETE /emoji-coins/trades/0x17740e230cb5ac3f6eb16135fa1ce02baf9a07f2acfa884b33b0fb2f1bc2b91d/cache`
 
+- `DELETE /emoji-coins/market-trades/:tokenAddress/cache` - Invalidate cache for a specific token's market trades
+  - **Example**: `DELETE /emoji-coins/market-trades/0x4d5baf086232716a5aac19ce9675f020bb9e3811643cd5d22870fd5f7382f001/cache`
+
+- `DELETE /emoji-coins/holders/:tokenAddress/cache` - Invalidate cache for a specific token's holders
+  - **Example**: `DELETE /emoji-coins/holders/0xb7397fc01a0dd28b9ac64b06a35b7c68454f88de5d35bb3dc8a9ffcc16306875::coin_factory::Emojicoin/cache`
+
 - `DELETE /emoji-coins/coingecko/historical_trades/cache` - Invalidate cache for CoinGecko format trades
   - **Query Parameters**:
     - `ticker_id` - The ticker ID of the emoji coin (required)
   - **Example**: `DELETE /emoji-coins/coingecko/historical_trades/cache?ticker_id=0x17740e230cb5ac3f6eb16135fa1ce02baf9a07f2acfa884b33b0fb2f1bc2b91d`
+  
+
+### Aptos Price
+
+- `GET /aptos-price` - Get current price of APT in USD
+  - **Query Parameters**:
+    - `skipCache` - Set to 'true' to bypass cache (default: 'false')
+  - **Example**: `GET /aptos-price`
+
+- `DELETE /aptos-price/cache` - Invalidate cache for APT price
+  - **Example**: `DELETE /aptos-price/cache`
+  
 

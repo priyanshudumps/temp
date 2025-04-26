@@ -25,8 +25,8 @@ CREATE TABLE coins(
 
 export const addCoinIfNotExists = async (coinData: ICoin): Promise<ICoin[]> => {
   const query = `
-    INSERT INTO coins (coin_id, coin_type_legacy, coin_address_fungible, coin_name, coin_symbol, coin_defyapp_symbol, coin_decimals, coin_description, coin_logo_url, coingecko_id, coinmarketcap_id, is_graduated, bonding_curve_progress)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    INSERT INTO coins (coin_id, coin_type_legacy, coin_address_fungible, coin_name, coin_symbol, coin_defyapp_symbol, coin_decimals, coin_description, coin_logo_url, coingecko_id, coinmarketcap_id, is_graduated, bonding_curve_progress, market_id, market_cap_usd)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
     ON CONFLICT (coin_id)
     DO NOTHING
     RETURNING *;
@@ -47,6 +47,8 @@ export const addCoinIfNotExists = async (coinData: ICoin): Promise<ICoin[]> => {
       coinData.coinmarketcap_id,
       coinData.is_graduated,
       coinData.bonding_curve_progress,
+      coinData.market_id,
+      coinData.market_cap_usd,
     ],
     true
   );
@@ -54,17 +56,17 @@ export const addCoinIfNotExists = async (coinData: ICoin): Promise<ICoin[]> => {
 
 export const addMultipleCoins = async (coinsData: ICoin[]): Promise<ICoin[]> => {
   const query = `
-    INSERT INTO coins (coin_id, coin_type_legacy, coin_address_fungible, coin_name, coin_symbol, coin_defyapp_symbol, coin_decimals, coin_description, coin_logo_url, coingecko_id, coinmarketcap_id, is_graduated, bonding_curve_progress)
+    INSERT INTO coins (coin_id, coin_type_legacy, coin_address_fungible, coin_name, coin_symbol, coin_defyapp_symbol, coin_decimals, coin_description, coin_logo_url, coingecko_id, coinmarketcap_id, is_graduated, bonding_curve_progress, market_id, market_cap_usd)
     VALUES ${coinsData
       .map(
         (_, index) =>
-          `($${index * 13 + 1}, $${index * 13 + 2}, $${index * 13 + 3}, $${
-            index * 13 + 4
-          }, $${index * 13 + 5}, $${index * 13 + 6}, $${index * 13 + 7}, $${
-            index * 13 + 8
-          }, $${index * 13 + 9}, $${index * 13 + 10}, $${index * 13 + 11}, $${
-            index * 13 + 12
-          }, $${index * 13 + 13})`
+          `($${index * 15 + 1}, $${index * 15 + 2}, $${index * 15 + 3}, $${
+            index * 15 + 4
+          }, $${index * 15 + 5}, $${index * 15 + 6}, $${index * 15 + 7}, $${
+            index * 15 + 8
+          }, $${index * 15 + 9}, $${index * 15 + 10}, $${index * 15 + 11}, $${
+            index * 15 + 12
+          }, $${index * 15 + 13}, $${index * 15 + 14}, $${index * 15 + 15})`
       )
       .join(", ")}
     ON CONFLICT (coin_id)
@@ -85,6 +87,8 @@ export const addMultipleCoins = async (coinsData: ICoin[]): Promise<ICoin[]> => 
     acc.push(coin.coinmarketcap_id);
     acc.push(coin.is_graduated);
     acc.push(coin.bonding_curve_progress);
+    acc.push(coin.market_id);
+    acc.push(coin.market_cap_usd);
     return acc;
   }, []);
   return executeQuery<ICoin>(query, values, true);
@@ -92,17 +96,17 @@ export const addMultipleCoins = async (coinsData: ICoin[]): Promise<ICoin[]> => 
 
 export const addMultipleCoinsOrUpdate = async (coinsData: ICoin[]): Promise<ICoin[]> => {
   const query = `
-    INSERT INTO coins (coin_id, coin_type_legacy, coin_address_fungible, coin_name, coin_symbol, coin_defyapp_symbol, coin_decimals, coin_description, coin_logo_url, coingecko_id, coinmarketcap_id, is_graduated, bonding_curve_progress)
+    INSERT INTO coins (coin_id, coin_type_legacy, coin_address_fungible, coin_name, coin_symbol, coin_defyapp_symbol, coin_decimals, coin_description, coin_logo_url, coingecko_id, coinmarketcap_id, is_graduated, bonding_curve_progress, market_id, market_cap_usd)
     VALUES ${coinsData
       .map(
         (_, index) =>
-          `($${index * 13 + 1}, $${index * 13 + 2}, $${index * 13 + 3}, $${
-            index * 13 + 4
-          }, $${index * 13 + 5}, $${index * 13 + 6}, $${index * 13 + 7}, $${
-            index * 13 + 8
-          }, $${index * 13 + 9}, $${index * 13 + 10}, $${index * 13 + 11}, $${
-            index * 13 + 12
-          }, $${index * 13 + 13})`
+          `($${index * 15 + 1}, $${index * 15 + 2}, $${index * 15 + 3}, $${
+            index * 15 + 4
+          }, $${index * 15 + 5}, $${index * 15 + 6}, $${index * 15 + 7}, $${
+            index * 15 + 8
+          }, $${index * 15 + 9}, $${index * 15 + 10}, $${index * 15 + 11}, $${
+            index * 15 + 12
+          }, $${index * 15 + 13}, $${index * 15 + 14}, $${index * 15 + 15})`
       )
       .join(", ")}
     ON CONFLICT (coin_id)
@@ -119,6 +123,8 @@ export const addMultipleCoinsOrUpdate = async (coinsData: ICoin[]): Promise<ICoi
       coinmarketcap_id = EXCLUDED.coinmarketcap_id,
       is_graduated = EXCLUDED.is_graduated,
       bonding_curve_progress = EXCLUDED.bonding_curve_progress,
+      market_id = EXCLUDED.market_id,
+      market_cap_usd = EXCLUDED.market_cap_usd,
       updated_at = NOW()
     RETURNING *;
   `;
@@ -136,6 +142,8 @@ export const addMultipleCoinsOrUpdate = async (coinsData: ICoin[]): Promise<ICoi
     acc.push(coin.coinmarketcap_id);
     acc.push(coin.is_graduated);
     acc.push(coin.bonding_curve_progress);
+    acc.push(coin.market_id);
+    acc.push(coin.market_cap_usd);
     return acc;
   }, []);
   return executeQuery<ICoin>(query, values, true);
@@ -156,8 +164,10 @@ export const updateCoin = async (coinId: string, coinData: Partial<ICoin>): Prom
         coinmarketcap_id = $10,
         is_graduated = $11,
         bonding_curve_progress = $12,
+        market_id = $13,
+        market_cap_usd = $14,
         updated_at = NOW()
-    WHERE coin_id = $13
+    WHERE coin_id = $15
     RETURNING *;
   `;
   return executeQuery<ICoin>(
@@ -175,6 +185,8 @@ export const updateCoin = async (coinId: string, coinData: Partial<ICoin>): Prom
       coinData.coinmarketcap_id,
       coinData.is_graduated,
       coinData.bonding_curve_progress,
+      coinData.market_id,
+      coinData.market_cap_usd,
       coinId,
     ],
     true

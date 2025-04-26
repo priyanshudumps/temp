@@ -2,6 +2,8 @@ import logger from '../config/logger';
 import redisCache from '../utils/redisCache';
 import CoinClients from './clients';
 import { IEmojiCoinTicker } from './clients/emojiCoinTickers.client';
+import fs from 'fs';
+import path from 'path';
 
 // Cache expiry time: 2 minutes (120 seconds) for frequently changing data
 const CACHE_TTL_TRENDING = 120;
@@ -10,6 +12,10 @@ const CACHE_PREFIX_TRENDING = 'emoji:trending';
 const CACHE_PREFIX_TRADES = 'emoji:trades';
 const CACHE_PREFIX_TICKERS = 'emoji:tickers';
 const CACHE_TTL_TICKERS = 300; // 5 minutes for tickers data
+const CACHE_PREFIX_MARKET_TRADES = 'emoji:market_trades';
+const CACHE_TTL_MARKET_TRADES = 300; // 5 minutes for market trades data
+const CACHE_PREFIX_HOLDERS = 'emoji:holders'; // Add new cache prefix
+const CACHE_TTL_HOLDERS = 300; // 5 minutes for holders data
 
 /**
  * Interface for trending emoji coin data
@@ -101,6 +107,184 @@ interface EmojiCoinTickersResponse {
   cache_time?: string;
   error?: string;
 }
+
+/**
+ * Interface for emoji coin market trades response
+ */
+interface EmojiCoinMarketTradesResponse {
+  token_address: string;
+  market_id?: string;
+  trades: any[];
+  cached?: boolean;
+  cache_time?: string;
+  error?: string;
+}
+
+/**
+ * Interface for emoji coin holders response
+ */
+interface EmojiCoinHoldersResponse {
+  token_address: string;
+  holders: {
+    owner_address: string;
+    amount: string;
+    decimals?: number;
+    symbol?: string;
+  }[];
+  total: number;
+  cached?: boolean;
+  cache_time?: string;
+  error?: string;
+}
+
+// Helper function to convert emoji to hex
+const emojiToHex = (emoji: string): string => {
+  // Get the code points
+  const encoder = new TextEncoder();
+  const utf8Bytes = encoder.encode(emoji);
+  
+  // Convert bytes to hex string with 0x prefix
+  const hexString = '0x' + Array.from(utf8Bytes)
+    .map(byte => byte.toString(16).padStart(2, '0'))
+    .join('');
+  
+  return hexString;
+};
+
+// Function to get complete market data from JSON file
+export const getCompleteMarketData = (): any[] => {
+  try {
+    const jsonPath = path.join(__dirname, 'clients', 'emojicoin-complete-market-data.json');
+    const jsonData = fs.readFileSync(jsonPath, 'utf8');
+    return JSON.parse(jsonData);
+  } catch (error) {
+    logger.error(`Error reading complete market data: ${error}`);
+    return [];
+  }
+};
+
+// Function to find market ID by emoji hex value
+export const findMarketIdByEmoji = (emoji: string): string | null => {
+  try {
+    const marketData = getCompleteMarketData();
+    const hexValue = emojiToHex(emoji);
+    
+    // Find matching market by hex value
+    const matchingMarket = marketData.find(market => market.hex === hexValue);
+    
+    if (matchingMarket) {
+      return matchingMarket.marketID;
+    }
+    
+    return null;
+  } catch (error) {
+    logger.error(`Error finding market ID for emoji: ${error}`);
+    return null;
+  }
+};
+
+// Function to process emoji tickers and update market_id
+export const processEmojiCoinMarketIds = async (tickers: IEmojiCoinTicker[]): Promise<IEmojiCoinTicker[]> => {
+  const marketData = getCompleteMarketData();
+  const processedTickers = tickers.map(ticker => {
+    try {
+      if (ticker.pool_id) {
+        const hexValue = emojiToHex(ticker.pool_id);
+        
+        // Find matching market by hex value
+        const matchingMarket = marketData.find(market => market.hex === hexValue);
+        
+        if (matchingMarket) {
+          return {
+            ...ticker,
+            market_id: matchingMarket.marketID,
+            market_cap_usd: parseFloat(matchingMarket.marketCap) || null
+          };
+        }
+      }
+      
+      return ticker;
+    } catch (error) {
+      logger.error(`Error processing market ID for ticker ${ticker.ticker_id}: ${error}`);
+      return ticker;
+    }
+  });
+  
+  return processedTickers;
+};
+
+// Function to update market data JSON with coin addresses
+export const updateMarketDataWithAddresses = async (tickers: IEmojiCoinTicker[]): Promise<void> => {
+  try {
+    const jsonPath = path.join(__dirname, 'clients', 'emojicoin-complete-market-data.json');
+    
+    // Check if file exists and is accessible
+    try {
+      fs.accessSync(jsonPath, fs.constants.R_OK | fs.constants.W_OK);
+    } catch (accessError) {
+      logger.error(`Cannot access emojicoin-complete-market-data.json: ${accessError}`);
+      return;
+    }
+    
+    const marketData = getCompleteMarketData();
+    let updated = false;
+    
+    // Create a map of emoji hex values to coin addresses from tickers
+    const hexToAddressMap = new Map<string, string>();
+    let totalEmojis = 0;
+    let updatedEmojis = 0;
+    let skippedEmojis = 0;
+    
+    tickers.forEach(ticker => {
+      if (ticker.pool_id && ticker.ticker_id) {
+        totalEmojis++;
+        const hexValue = emojiToHex(ticker.pool_id);
+        // Extract the base currency (coin address) from ticker_id
+        const baseAddress = ticker.base_currency;
+        if (baseAddress) {
+          hexToAddressMap.set(hexValue, baseAddress);
+        } else {
+          skippedEmojis++;
+        }
+      }
+    });
+    
+    // Update marketData with addresses
+    for (const market of marketData) {
+      if (hexToAddressMap.has(market.hex)) {
+        const newAddress = hexToAddressMap.get(market.hex);
+        
+        // If coinAddress doesn't exist or is different from the new address
+        if (!market.coinAddress || market.coinAddress !== newAddress) {
+          market.coinAddress = newAddress;
+          updated = true;
+          updatedEmojis++;
+          logger.debug(`Updated coinAddress for emoji ${market.emoji} (${market.hex}) to ${newAddress}`);
+        }
+      }
+    }
+    
+    if (updated) {
+      // Write updated data back to file
+      try {
+        // Create a temporary file first to avoid corrupting the original
+        const tempPath = `${jsonPath}.tmp`;
+        fs.writeFileSync(tempPath, JSON.stringify(marketData, null, 2), 'utf8');
+        
+        // Rename temp file to the original file (atomic operation)
+        fs.renameSync(tempPath, jsonPath);
+        
+        logger.info(`Updated emojicoin-complete-market-data.json: ${updatedEmojis} emojis updated, ${skippedEmojis} skipped out of ${totalEmojis} total emojis`);
+      } catch (writeError) {
+        logger.error(`Error writing to emojicoin-complete-market-data.json: ${writeError}`);
+      }
+    } else {
+      logger.info(`No changes needed in emojicoin-complete-market-data.json. Processed ${totalEmojis} emojis.`);
+    }
+  } catch (error) {
+    logger.error(`Error updating market data with addresses: ${error}`);
+  }
+};
 
 /**
  * Get all tickers with pagination support
@@ -422,11 +606,276 @@ async function scanKeys(pattern: string): Promise<string[]> {
   }
 }
 
+/**
+ * Find market ID by token address
+ * @param tokenAddress The token address to search for
+ * @returns Market ID if found, null otherwise
+ */
+export const findMarketIdByTokenAddress = (tokenAddress: string): string | null => {
+  try {
+    const marketData = getCompleteMarketData();
+    const normalizedAddress = tokenAddress.toLowerCase();
+    
+    // Find matching market by token address
+    const matchingMarket = marketData.find(market => 
+      market.coinAddress && market.coinAddress.toLowerCase() === normalizedAddress
+    );
+    
+    if (matchingMarket) {
+      return matchingMarket.marketID;
+    }
+    
+    return null;
+  } catch (error) {
+    logger.error(`Error finding market ID for token address: ${error}`);
+    return null;
+  }
+};
+
+/**
+ * Get market trades for a specific token address
+ * @param tokenAddress The token address to get trades for
+ * @param page Optional page number for pagination
+ * @param limit Optional limit for number of trades per page
+ * @param skipCache Whether to skip checking the cache
+ * @returns Market trades for the specified token
+ */
+export const getEmojiCoinMarketTrades = async (
+  tokenAddress: string,
+  page: number = 1,
+  limit: number = 100,
+  skipCache: boolean = false
+): Promise<EmojiCoinMarketTradesResponse> => {
+  try {
+    // Create a unique cache key
+    const cacheKey = redisCache.createCacheKey(
+      CACHE_PREFIX_TRADES, 
+      'market',
+      tokenAddress,
+      `page_${page}`,
+      `limit_${limit}`
+    );
+    
+    if (!skipCache) {
+      const cachedData = await redisCache.getCache<EmojiCoinMarketTradesResponse>(cacheKey);
+      if (cachedData) {
+        return {
+          ...cachedData,
+          cached: true,
+          cache_time: new Date().toISOString()
+        };
+      }
+    }
+    
+    // Look up the market ID for this token address
+    const marketId = findMarketIdByTokenAddress(tokenAddress);
+    
+    if (!marketId) {
+      return {
+        token_address: tokenAddress,
+        trades: [],
+        error: `Market ID not found for token address: ${tokenAddress}`
+      };
+    }
+    
+    logger.info(`Fetching market trades for token address: ${tokenAddress}, market ID: ${marketId}, page: ${page}`);
+    
+    try {
+      // Construct URL for emojicoin.fun API
+      const url = `https://www.emojicoin.fun/api/trades?marketID=${marketId}&page=${page}`;
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+      
+      const trades = await response.json();
+      
+      const result: EmojiCoinMarketTradesResponse = {
+        token_address: tokenAddress,
+        market_id: marketId,
+        trades: trades
+      };
+      
+      await redisCache.setCache(cacheKey, result, CACHE_TTL_TRADES);
+      
+      return result;
+    } catch (error) {
+      logger.error(`Error fetching emoji coin market trades for ${tokenAddress} (Market ID: ${marketId}): ${error}`);
+      return {
+        token_address: tokenAddress,
+        market_id: marketId,
+        trades: [],
+        error: `Failed to fetch market trades: ${error}`
+      };
+    }
+  } catch (error) {
+    logger.error(`Error in getEmojiCoinMarketTrades: ${error}`);
+    return {
+      token_address: tokenAddress,
+      trades: [],
+      error: `Failed to get market trades: ${error}`
+    };
+  }
+};
+
+/**
+ * Invalidate cache for a specific token's market trades
+ * @param tokenAddress The token address
+ */
+export const invalidateEmojiCoinMarketTradesCache = async (tokenAddress: string): Promise<void> => {
+  try {
+    // Get all keys matching the pattern
+    const keys = await scanKeys(`${CACHE_PREFIX_MARKET_TRADES}:${tokenAddress}:*`);
+    
+    // Delete all matching keys
+    if (keys.length > 0) {
+      await redisCache.client.del(...keys);
+      logger.info(`Invalidated ${keys.length} cache entries for emoji coin market trades: ${tokenAddress}`);
+    }
+  } catch (error) {
+    logger.error(`Error invalidating emoji coin market trades cache: ${error}`);
+  }
+};
+
+/**
+ * Get holders data for a specific emoji coin
+ * @param assetType - The asset type in format 0x{address}::{module}::Emojicoin
+ * @param offset - Offset for pagination
+ * @param limit - Number of holders to return
+ * @param skipCache - Whether to skip cache
+ * @returns Holders data for the emoji coin
+ */
+export const getEmojiCoinHolders = async (
+  assetType: string,
+  offset: number = 0,
+  limit: number = 100,
+  skipCache: boolean = false
+): Promise<EmojiCoinHoldersResponse> => {
+  const cacheKey = `${CACHE_PREFIX_HOLDERS}:${assetType}:${offset}:${limit}`;
+  
+  // Check cache first if skipCache is false
+  if (!skipCache) {
+    const cachedData = await redisCache.getCache<EmojiCoinHoldersResponse>(cacheKey);
+    if (cachedData) {
+      logger.info(`Retrieved emoji coin holders from cache: ${assetType}`);
+      return {
+        ...cachedData,
+        cached: true,
+        cache_time: new Date().toISOString()
+      };
+    }
+  }
+  
+  try {
+    const query = `
+      query GetEmojicoinHolders($assetType: String!, $offset: Int = 0, $limit: Int = 100) {
+        current_fungible_asset_balances(
+          where: {
+            _and: [
+              { metadata: { token_standard: { _eq: "v1" } } },
+              { amount: { _gt: "0" } },
+              { asset_type: { _eq: $assetType } }
+            ]
+          }
+          offset: $offset
+          limit: $limit
+        ) {
+          owner_address
+          amount
+          asset_type
+          metadata {
+            decimals
+            symbol
+          }
+        }
+      }
+    `;
+    
+    const variables = {
+      assetType,
+      offset,
+      limit
+    };
+    
+    const response = await fetch('https://indexer.mainnet.aptoslabs.com/v1/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        query,
+        variables
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Aptos indexer GraphQL API error: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.errors) {
+      throw new Error(`GraphQL query error: ${data.errors[0].message}`);
+    }
+    
+    const holders = data.data.current_fungible_asset_balances.map((balance: any) => ({
+      owner_address: balance.owner_address,
+      amount: balance.amount,
+      decimals: balance.metadata?.decimals,
+      symbol: balance.metadata?.symbol
+    }));
+    
+    const result: EmojiCoinHoldersResponse = {
+      token_address: assetType,
+      holders,
+      total: holders.length
+    };
+    
+    // Cache the result
+    await redisCache.setCache(cacheKey, result, CACHE_TTL_HOLDERS);
+    
+    return result;
+  } catch (error) {
+    logger.error(`Error fetching emoji coin holders: ${error}`);
+    return {
+      token_address: assetType,
+      holders: [],
+      total: 0,
+      error: `Failed to fetch emoji coin holders: ${error}`
+    };
+  }
+};
+
+/**
+ * Invalidate cache for a specific emoji coin's holders
+ * @param assetType - The asset type in format 0x{address}::{module}::Emojicoin
+ */
+export const invalidateEmojiCoinHoldersCache = async (assetType: string): Promise<void> => {
+  try {
+    // Get all keys matching the pattern
+    const keys = await scanKeys(`${CACHE_PREFIX_HOLDERS}:${assetType}:*`);
+    
+    // Delete all matching keys
+    if (keys.length > 0) {
+      await redisCache.client.del(...keys);
+      logger.info(`Invalidated ${keys.length} cache entries for emoji coin holders: ${assetType}`);
+    }
+  } catch (error) {
+    logger.error(`Error invalidating emoji coin holders cache: ${error}`);
+  }
+};
+
 export default {
   getTrendingEmojiCoins,
   getEmojiCoinTrades,
   getAllEmojiCoinTickers,
+  getEmojiCoinMarketTrades,
   invalidateTrendingEmojiCoinsCache,
   invalidateEmojiCoinTradesCache,
-  invalidateEmojiCoinTickersCache
+  invalidateEmojiCoinTickersCache,
+  invalidateEmojiCoinMarketTradesCache,
+  getEmojiCoinHolders,
+  invalidateEmojiCoinHoldersCache
 }; 

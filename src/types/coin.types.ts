@@ -12,6 +12,8 @@ export interface ICoin {
     coinmarketcap_id?: string | null;
     is_graduated?: string | null;
     bonding_curve_progress?: number | null;
+    market_id?: string | null;
+    market_cap_usd?: number | null;
     created_at?: Date;
     updated_at?: Date;
   }

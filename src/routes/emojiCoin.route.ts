@@ -361,4 +361,188 @@ router.delete(
   })
 );
 
+/**
+ * @route   GET /emoji-coins/market-trades/:tokenAddress
+ * @desc    Get market trades for a specific token address
+ * @access  Public
+ */
+router.get(
+  '/market-trades/:tokenAddress',
+  catchAsync(async (req: Request, res: Response) => {
+    const { tokenAddress } = req.params;
+    const {
+      page = '1',
+      limit = '100',
+      skipCache = 'false' 
+    } = req.query;
+    
+    if (!tokenAddress) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Token address is required');
+    }
+    
+    let parsedPage: number;
+    let parsedLimit: number;
+    
+    // Parse and validate page
+    try {
+      parsedPage = parseInt(String(page));
+      if (isNaN(parsedPage) || parsedPage < 1) {
+        throw new Error('Invalid page');
+      }
+    } catch (error) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Page must be a positive number'
+      );
+    }
+    
+    // Parse and validate limit
+    try {
+      parsedLimit = parseInt(String(limit));
+      if (isNaN(parsedLimit) || parsedLimit < 1) {
+        throw new Error('Invalid limit');
+      }
+    } catch (error) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Limit must be a positive number'
+      );
+    }
+    
+    // Parse skipCache
+    const shouldSkipCache = String(skipCache).toLowerCase() === 'true';
+    
+    const tradesData = await emojiCoinService.getEmojiCoinMarketTrades(
+      tokenAddress,
+      parsedPage,
+      parsedLimit,
+      shouldSkipCache
+    );
+    
+    if (tradesData.error) {
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        tradesData.error
+      );
+    }
+    
+    res.status(httpStatus.OK).json(tradesData);
+  })
+);
+
+/**
+ * @route   GET /emoji-coins/holders/:tokenAddress
+ * @desc    Get holders data for a specific emoji coin
+ * @access  Public
+ */
+router.get(
+  '/holders/:tokenAddress',
+  catchAsync(async (req: Request, res: Response) => {
+    const { tokenAddress } = req.params;
+    const {
+      offset = '0',
+      limit = '100',
+      skipCache = 'false'
+    } = req.query;
+    
+    if (!tokenAddress) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Token address is required');
+    }
+    
+    let parsedOffset: number;
+    let parsedLimit: number;
+    
+    // Parse and validate offset
+    try {
+      parsedOffset = parseInt(String(offset));
+      if (isNaN(parsedOffset) || parsedOffset < 0) {
+        throw new Error('Invalid offset');
+      }
+    } catch (error) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Offset must be a non-negative number'
+      );
+    }
+    
+    // Parse and validate limit
+    try {
+      parsedLimit = parseInt(String(limit));
+      if (isNaN(parsedLimit) || parsedLimit < 0) {
+        throw new Error('Invalid limit');
+      }
+    } catch (error) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'Limit must be a non-negative number'
+      );
+    }
+    
+    // Parse skipCache
+    const shouldSkipCache = String(skipCache).toLowerCase() === 'true';
+    
+    const holdersData = await emojiCoinService.getEmojiCoinHolders(
+      tokenAddress,
+      parsedOffset,
+      parsedLimit,
+      shouldSkipCache
+    );
+    
+    if (holdersData.error) {
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        holdersData.error
+      );
+    }
+    
+    res.status(httpStatus.OK).json(holdersData);
+  })
+);
+
+/**
+ * @route   DELETE /emoji-coins/holders/:tokenAddress/cache
+ * @desc    Invalidate cache for a specific token's holders
+ * @access  Public (could be restricted in production)
+ */
+router.delete(
+  '/holders/:tokenAddress/cache',
+  catchAsync(async (req: Request, res: Response) => {
+    const { tokenAddress } = req.params;
+    
+    if (!tokenAddress) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Token address is required');
+    }
+    
+    await emojiCoinService.invalidateEmojiCoinHoldersCache(tokenAddress);
+    
+    res.status(httpStatus.OK).json({
+      message: `Cache invalidated for token holders: ${tokenAddress}`,
+      success: true
+    });
+  })
+);
+
+/**
+ * @route   DELETE /emoji-coins/market-trades/:tokenAddress/cache
+ * @desc    Invalidate cache for a specific token's market trades
+ * @access  Public (could be restricted in production)
+ */
+router.delete(
+  '/market-trades/:tokenAddress/cache',
+  catchAsync(async (req: Request, res: Response) => {
+    const { tokenAddress } = req.params;
+    
+    if (!tokenAddress) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Token address is required');
+    }
+    
+    await emojiCoinService.invalidateEmojiCoinMarketTradesCache(tokenAddress);
+    
+    res.status(httpStatus.OK).json({
+      success: true,
+      message: `Cache for emoji coin market trades has been invalidated for token: ${tokenAddress}`
+    });
+  })
+);
+
 export default router; 

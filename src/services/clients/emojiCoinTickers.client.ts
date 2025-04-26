@@ -12,6 +12,8 @@ export interface IEmojiCoinTicker {
   base_volume: string;
   target_volume: string;
   liquidity_in_usd: string;
+  market_id?: string;
+  market_cap_usd?: number;
 }
 
 /**
